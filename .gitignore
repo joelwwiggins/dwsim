@@ -119,3 +119,5 @@ TCPServer/bin/Debug/*
 /DWSIM.Plugins.HeatOfCombustion/.vs
 /DWSIM.ProFeatures/.vs
 /DWSIM.Thermodynamics/.vs
+/dwsimpy_env/
+dwsimpy/venv/
