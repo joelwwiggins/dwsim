@@ -67,3 +67,27 @@ class Mixer(BaseClass):
             # PH flash would be done here with property package
 
         self.output_stream.calculated = True
+
+    def get_display_name(self) -> str:
+        return "Mixer"
+
+    def get_display_description(self) -> str:
+        return "Stream mixing unit operation"
+
+    def get_icon_bitmap(self):
+        return None
+
+    def display_edit_form(self):
+        pass
+
+    def update_edit_form(self):
+        pass
+
+    def close_edit_form(self):
+        pass
+
+    def clone_xml(self):
+        return self.__class__()
+
+    def clone_json(self):
+        return self.__class__()

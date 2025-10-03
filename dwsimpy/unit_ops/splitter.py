@@ -73,3 +73,27 @@ class Splitter(BaseClass):
         if len(value) != 3:
             raise ValueError("Ratios must be a list of 3 values")
         self._ratios = value
+
+    def get_display_name(self) -> str:
+        return "Splitter"
+
+    def get_display_description(self) -> str:
+        return "Stream splitting unit operation"
+
+    def get_icon_bitmap(self):
+        return None
+
+    def display_edit_form(self):
+        pass
+
+    def update_edit_form(self):
+        pass
+
+    def close_edit_form(self):
+        pass
+
+    def clone_xml(self):
+        return self.__class__()
+
+    def clone_json(self):
+        return self.__class__()

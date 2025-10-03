@@ -50,3 +50,27 @@ class Valve(BaseClass):
         # For now, assume isothermal or use property package
 
         self.output_stream.calculated = True
+
+    def get_display_name(self) -> str:
+        return "Valve"
+
+    def get_display_description(self) -> str:
+        return "Pressure drop unit operation"
+
+    def get_icon_bitmap(self):
+        return None
+
+    def display_edit_form(self):
+        pass
+
+    def update_edit_form(self):
+        pass
+
+    def close_edit_form(self):
+        pass
+
+    def clone_xml(self):
+        return self.__class__()
+
+    def clone_json(self):
+        return self.__class__()

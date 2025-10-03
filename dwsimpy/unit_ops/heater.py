@@ -60,3 +60,27 @@ class Heater(BaseClass):
             self.output_stream.temperature = self.input_stream.temperature + delta_t
 
         self.output_stream.calculated = True
+
+    def get_display_name(self) -> str:
+        return "Heater"
+
+    def get_display_description(self) -> str:
+        return "Energy addition unit operation"
+
+    def get_icon_bitmap(self):
+        return None
+
+    def display_edit_form(self):
+        pass
+
+    def update_edit_form(self):
+        pass
+
+    def close_edit_form(self):
+        pass
+
+    def clone_xml(self):
+        return self.__class__()
+
+    def clone_json(self):
+        return self.__class__()

@@ -138,3 +138,27 @@ class MaterialStream(BaseClass):
         """Save data to XML-like structure."""
         # Placeholder for serialization
         return []
+
+    def get_display_name(self) -> str:
+        return "Material Stream"
+
+    def get_display_description(self) -> str:
+        return "Process material stream"
+
+    def get_icon_bitmap(self):
+        return None
+
+    def display_edit_form(self):
+        pass
+
+    def update_edit_form(self):
+        pass
+
+    def close_edit_form(self):
+        pass
+
+    def clone_xml(self):
+        return self.__class__()
+
+    def clone_json(self):
+        return self.__class__()
