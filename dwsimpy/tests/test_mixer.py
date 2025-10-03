@@ -9,11 +9,36 @@ from dwsimpy.unit_ops.mixer import Mixer
 
 
 class MockStream:
-    def __init__(self, mass_flow, pressure, enthalpy):
+    def __init__(self, mass_flow, pressure, enthalpy, temperature=298.15):
         self.mass_flow = mass_flow
         self.pressure = pressure
         self.enthalpy = enthalpy
+        self.temperature = temperature
         self.calculated = True
+
+    def get_mass_flow(self):
+        return self.mass_flow
+
+    def get_pressure(self):
+        return self.pressure
+
+    def get_enthalpy(self):
+        return self.enthalpy
+
+    def get_temperature(self):
+        return self.temperature
+
+    def set_mass_flow(self, value):
+        self.mass_flow = value
+
+    def set_pressure(self, value):
+        self.pressure = value
+
+    def set_enthalpy(self, value):
+        self.enthalpy = value
+
+    def set_temperature(self, value):
+        self.temperature = value
 
 
 class TestMixer:
@@ -34,32 +59,35 @@ class TestMixer:
         """Test mixing with minimum pressure."""
         mixer.pressure_behavior = "minimum"
         mixer.input_streams = [
-            MockStream(10.0, 101325.0, 100.0),
-            MockStream(5.0, 100000.0, 150.0)
+            MockStream(10.0, 101325.0, 100.0, 300.0),
+            MockStream(5.0, 100000.0, 150.0, 320.0)
         ]
-        mixer.output_stream = MockStream(0, 0, 0)
+        mixer.output_stream = MockStream(0, 0, 0, 0)
         mixer.output_stream.calculated = False
 
         mixer.calculate()
 
-        assert mixer.output_stream.mass_flow == 15.0
-        assert mixer.output_stream.pressure == 100000.0  # minimum
-        assert mixer.output_stream.enthalpy == (10*100 + 5*150) / 15
+        assert mixer.output_stream.get_mass_flow() == 15.0
+        assert mixer.output_stream.get_pressure() == 100000.0  # minimum
+        assert mixer.output_stream.get_enthalpy() == (10.0 * 100.0 + 5.0 * 150.0) / 15.0
         assert mixer.output_stream.calculated
 
     def test_calculate_maximum_pressure(self, mixer):
         """Test mixing with maximum pressure."""
         mixer.pressure_behavior = "maximum"
         mixer.input_streams = [
-            MockStream(10.0, 101325.0, 100.0),
-            MockStream(5.0, 100000.0, 150.0)
+            MockStream(10.0, 101325.0, 100.0, 300.0),
+            MockStream(5.0, 100000.0, 150.0, 320.0)
         ]
-        mixer.output_stream = MockStream(0, 0, 0)
+        mixer.output_stream = MockStream(0, 0, 0, 0)
         mixer.output_stream.calculated = False
 
         mixer.calculate()
 
-        assert mixer.output_stream.pressure == 101325.0  # maximum
+        assert mixer.output_stream.get_mass_flow() == 15.0
+        assert mixer.output_stream.get_pressure() == 101325.0  # maximum
+        assert mixer.output_stream.get_enthalpy() == (10.0 * 100.0 + 5.0 * 150.0) / 15.0
+        assert mixer.output_stream.calculated
 
     def test_no_output_stream(self, mixer):
         """Test error when no output stream."""

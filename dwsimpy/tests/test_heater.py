@@ -17,6 +17,30 @@ class MockStream:
         self.compositions = compositions or {}
         self.calculated = True
 
+    def get_mass_flow(self):
+        return self.mass_flow
+
+    def get_temperature(self):
+        return self.temperature
+
+    def get_pressure(self):
+        return self.pressure
+
+    def get_enthalpy(self):
+        return self.enthalpy
+
+    def set_mass_flow(self, value):
+        self.mass_flow = value
+
+    def set_temperature(self, value):
+        self.temperature = value
+
+    def set_pressure(self, value):
+        self.pressure = value
+
+    def set_enthalpy(self, value):
+        self.enthalpy = value
+
 
 class TestHeater:
     """Test cases for Heater class."""

@@ -35,9 +35,9 @@ class Mixer(BaseClass):
             if not stream.calculated:
                 raise ValueError("Inlet stream not calculated")
 
-            mass_flow = stream.mass_flow
-            enthalpy = stream.enthalpy
-            stream_pressure = stream.pressure
+            mass_flow = stream.get_mass_flow()
+            enthalpy = stream.get_enthalpy()
+            stream_pressure = stream.get_pressure()
 
             total_mass_flow += mass_flow
             if enthalpy is not None:
@@ -57,14 +57,19 @@ class Mixer(BaseClass):
             pressure /= len(self.input_streams)
 
         # Set outlet stream properties
-        self.output_stream.mass_flow = total_mass_flow
-        self.output_stream.pressure = pressure
+        self.output_stream.set_mass_flow(total_mass_flow)
+        self.output_stream.set_pressure(pressure)
 
         # Calculate temperature via PH flash
         if total_mass_flow > 0:
             avg_enthalpy = total_enthalpy / total_mass_flow
-            self.output_stream.enthalpy = avg_enthalpy
-            # PH flash would be done here with property package
+            self.output_stream.set_enthalpy(avg_enthalpy)
+            # For simplicity, assume temperature is average
+            total_temp = 0.0
+            for stream in self.input_streams:
+                total_temp += stream.get_mass_flow() * stream.get_temperature()
+            avg_temp = total_temp / total_mass_flow
+            self.output_stream.set_temperature(avg_temp)
 
         self.output_stream.calculated = True
 

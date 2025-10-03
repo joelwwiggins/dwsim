@@ -27,13 +27,13 @@ class IdealPropertyPackage(BaseClass):
             "liquid_enthalpy_entropy_cpcv": "Ideal Gas Cp + Enthalpy of Vaporization"
         }
 
-    def calculate_k_values(self, phase, t, p):
-        """Calculate K-values for phase equilibrium."""
-        # Placeholder: Raoult's Law
+    def calculate_k_values(self, t, p):
+        """Calculate K-values using Raoult's Law."""
         k_values = {}
-        for comp in self.selected_compounds:
-            # Simplified
-            k_values[comp] = 1.0  # Assume ideal
+        for comp_id, comp in self.selected_compounds.items():
+            # Assume comp has vapor_pressure method
+            p_sat = getattr(comp, 'vapor_pressure', lambda t: 1e5)(t)  # Placeholder
+            k_values[comp_id] = p_sat / p
         return k_values
 
     def calculate_enthalpy(self, phase, t, p):
@@ -74,3 +74,28 @@ class IdealPropertyPackage(BaseClass):
 
     def clone_json(self):
         return self.__class__()
+
+    def calculate_equilibrium(self, calctype, val1, val2, mixmolefrac, kval, initial_estimate):
+        """Implement calculate_equilibrium for Ideal package."""
+        if calctype == FlashCalculationType.PTFlash:
+            t, p = val1, val2
+            k = self.calculate_k_values(t, p)
+            # Simple flash assuming all vaporize
+            v_frac = 0.5  # Placeholder
+            y = [k[i] * mixmolefrac[idx] for idx, i in enumerate(k)]
+            x = mixmolefrac  # Assume liquid same
+            
+            result = FlashCalculationResult(
+                base_mole_amount=sum(mixmolefrac),
+                kvalues=list(k.values()),
+                mixture_mole_amounts=mixmolefrac,
+                vapor_phase_mole_amounts=y,
+                liquid_phase1_mole_amounts=x,
+                liquid_phase2_mole_amounts=[0.0] * len(mixmolefrac),
+                solid_phase_mole_amounts=[0.0] * len(mixmolefrac),
+                calculated_temperature=t,
+                calculated_pressure=p,
+                iterations_taken=1
+            )
+            return result
+        return super().calculate_equilibrium(calctype, val1, val2, mixmolefrac, kval, initial_estimate)

@@ -38,8 +38,8 @@ class Heater(BaseClass):
 
         if self.calc_mode == "heat_added":
             # Calculate outlet enthalpy
-            wi = self.input_stream.mass_flow
-            hi = self.input_stream.enthalpy
+            wi = self.input_stream.get_mass_flow()
+            hi = self.input_stream.get_enthalpy()
             q_added = self.delta_q * (self.efficiency / 100.0)
 
             if wi > 0:
@@ -48,16 +48,16 @@ class Heater(BaseClass):
                 h2 = hi
 
             # Set outlet properties
-            self.output_stream.mass_flow = wi
-            self.output_stream.pressure = self.input_stream.pressure - self.delta_p
-            self.output_stream.enthalpy = h2
-            self.output_stream.compositions = self.input_stream.compositions.copy()
+            self.output_stream.set_mass_flow(wi)
+            self.output_stream.set_pressure(self.input_stream.get_pressure() - self.delta_p)
+            self.output_stream.set_enthalpy(h2)
+            self.output_stream.compositions = self.input_stream.compositions.copy()  # Assuming compositions exist
 
             # In reality, would do PH flash for temperature
             # For now, assume temperature change based on simple calculation
             cp_assumed = 4.18  # kJ/kg.K, water
             delta_t = q_added / (wi * cp_assumed) if wi > 0 else 0
-            self.output_stream.temperature = self.input_stream.temperature + delta_t
+            self.output_stream.set_temperature(self.input_stream.get_temperature() + delta_t)
 
         self.output_stream.calculated = True
 
