@@ -5,7 +5,7 @@ Generated using pytest.
 """
 
 import pytest
-from dwsimpy.core.wilson_model import WilsonModel
+from dwsimpy.thermo.wilson_model import WilsonModel
 
 
 class TestWilsonModel:

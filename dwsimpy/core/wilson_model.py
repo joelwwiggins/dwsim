@@ -13,18 +13,15 @@ from typing import Dict, List, Tuple, Any
 class IActivityCoefficientBase:
     """Interface for activity coefficient models."""
 
-    def calc_activity_coefficients(self, T: float, Vx: List[float],
-                                   otherargs: Any) -> List[float]:
+    def calc_activity_coefficients(self, T: float, Vx: List[float], otherargs: Any) -> List[float]:
         """Calculate activity coefficients."""
         raise NotImplementedError
 
-    def calc_excess_enthalpy(self, T: float, Vx: List[float],
-                             otherargs: Any) -> float:
+    def calc_excess_enthalpy(self, T: float, Vx: List[float], otherargs: Any) -> float:
         """Calculate excess enthalpy."""
         raise NotImplementedError
 
-    def calc_excess_heat_capacity(self, T: float, Vx: List[float>,
-                                  otherargs: Any) -> float:
+    def calc_excess_heat_capacity(self, T: float, Vx: List[float], otherargs: Any) -> float:
         """Calculate excess heat capacity."""
         raise NotImplementedError
 
@@ -76,8 +73,7 @@ CAS1;CAS2;A12;A21
         else:
             return 0.0
 
-    def calc_activity_coefficients(self, T: float, Vx: List[float],
-                                   otherargs: Any) -> List[float]:
+    def calc_activity_coefficients(self, T: float, Vx: List[float], otherargs: Any) -> List[float]:
         """
         Calculate activity coefficients using Wilson equation.
 
@@ -121,8 +117,7 @@ CAS1;CAS2;A12;A21
             raise ValueError("Error calculating activity coefficients: "
                              f"{str(e)}")
 
-    def calc_excess_enthalpy(self, T: float, Vx: List[float],
-                             otherargs: Any) -> float:
+    def calc_excess_enthalpy(self, T: float, Vx: List[float], otherargs: Any) -> float:
         """Calculate excess enthalpy in kJ/kmol."""
         try:
             gamma1 = self.calc_activity_coefficients(T - 0.01, Vx, otherargs)
@@ -138,8 +133,7 @@ CAS1;CAS2;A12;A21
         except Exception as e:
             raise ValueError(f"Error calculating excess enthalpy: {str(e)}")
 
-    def calc_excess_heat_capacity(self, T: float, Vx: List[float>,
-                                  otherargs: Any) -> float:
+    def calc_excess_heat_capacity(self, T: float, Vx: List[float], otherargs: Any) -> float:
         """Calculate excess heat capacity in kJ/kmol.K."""
         try:
             epsilon = 0.001
