@@ -7,6 +7,14 @@ This module defines the base class for all simulation objects.
 
 from abc import ABC, abstractmethod
 from typing import Any
+import logging
+import json
+import xml.etree.ElementTree as ET
+from ..interfaces.iflowsheet import IFlowsheet
+from ..interfaces.igraphicobject import IGraphicObject
+
+
+logger = logging.getLogger(__name__)
 
 
 class BaseClass(ABC):
@@ -18,7 +26,7 @@ class BaseClass(ABC):
 
     def __init__(self):
         self.class_id: str = ""
-        self.flowsheet = None  # IFlowsheet
+        self.flowsheet: IFlowsheet = None
         self._is_dirty: bool = True
         self._can_use_previous_results: bool = False
         self.dynamics_spec = None  # DynamicsSpecType
@@ -34,7 +42,7 @@ class BaseClass(ABC):
         self.is_functional: bool = True
         self.component_description: str = ""
         self.component_name: str = ""
-        self.graphic_object = None  # IGraphicObject
+        self.graphic_object: IGraphicObject = None
         self.attached_utilities = []
         self.preferred_flash_algorithm_tag: str = ""
         self.calculated: bool = False
@@ -70,8 +78,50 @@ class BaseClass(ABC):
 
     def clone(self) -> 'BaseClass':
         """Clone the object."""
-        # Placeholder
-        return self.__class__()
+        new_obj = self.__class__()
+        new_obj.class_id = self.class_id
+        new_obj.flowsheet = self.flowsheet
+        new_obj._is_dirty = self._is_dirty
+        new_obj._can_use_previous_results = self._can_use_previous_results
+        new_obj.dynamics_spec = self.dynamics_spec
+        new_obj.dynamics_only = self.dynamics_only
+        new_obj.extra_properties = self.extra_properties.copy()
+        new_obj.extra_properties_unit_types = self.extra_properties_unit_types.copy()
+        new_obj.extra_properties_descriptions = self.extra_properties_descriptions.copy()
+        new_obj.extra_properties_types = self.extra_properties_types.copy()
+        new_obj.visible = self.visible
+        new_obj.override_calculation_routine = self.override_calculation_routine
+        new_obj.store_detailed_debug_report = self.store_detailed_debug_report
+        new_obj.detailed_debug_report = self.detailed_debug_report
+        new_obj.is_functional = self.is_functional
+        new_obj.component_description = self.component_description
+        new_obj.component_name = self.component_name
+        new_obj.graphic_object = self.graphic_object
+        new_obj.attached_utilities = self.attached_utilities.copy()
+        new_obj.preferred_flash_algorithm_tag = self.preferred_flash_algorithm_tag
+        new_obj.calculated = self.calculated
+        new_obj.debug_mode = self.debug_mode
+        new_obj.debug_text = self.debug_text
+        new_obj.last_updated = self.last_updated
+        new_obj.error_message = self.error_message
+        new_obj.annotation = self.annotation
+        new_obj.is_adjust_attached = self.is_adjust_attached
+        new_obj.attached_adjust_id = self.attached_adjust_id
+        new_obj.adjust_var_type = self.adjust_var_type
+        new_obj.is_spec_attached = self.is_spec_attached
+        new_obj.attached_spec_id = self.attached_spec_id
+        new_obj.spec_var_type = self.spec_var_type
+        new_obj.object_class = self.object_class
+        new_obj.supports_dynamic_mode = self.supports_dynamic_mode
+        new_obj.has_properties_for_dynamic_mode = self.has_properties_for_dynamic_mode
+        new_obj.launch_external_property_editor = self.launch_external_property_editor
+        new_obj.extra_properties_editor = self.extra_properties_editor
+        new_obj.calculation_routine_override = self.calculation_routine_override
+        new_obj.user_defined_chart_names = self.user_defined_chart_names.copy()
+        new_obj.create_chart_action = self.create_chart_action
+        new_obj.fd = self.fd
+        new_obj.ghg_emission_data = self.ghg_emission_data
+        return new_obj
 
     def dispose(self):
         """Dispose resources."""
@@ -287,15 +337,17 @@ class BaseClass(ABC):
         """Close edit form."""
         pass
 
-    @abstractmethod
     def clone_xml(self):
         """Clone XML."""
-        pass
+        root = ET.Element("BaseClass")
+        for key, value in self.__dict__.items():
+            if isinstance(value, (str, int, float, bool)):
+                ET.SubElement(root, key).text = str(value)
+        return ET.tostring(root, encoding='unicode')
 
-    @abstractmethod
     def clone_json(self):
         """Clone JSON."""
-        pass
+        return json.dumps(self.__dict__, default=str)
 
     @property
     def mobile_compatible(self) -> bool:
