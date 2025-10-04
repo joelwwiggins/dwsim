@@ -5,7 +5,8 @@ Converted from VB.NET to Python.
 This module implements the Component Separator unit operation for component-based separation.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
 class ComponentSeparationSpec:
@@ -18,16 +19,16 @@ class ComponentSeparationSpec:
         self.spec_unit = spec_unit
 
 
-class ComponentSeparator(BaseClass):
+class ComponentSeparator(BaseUnitOperation):
     """
     Component Separator unit operation.
 
     Separates components based on specified fractions.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.separation_specs = []  # List of ComponentSeparationSpec
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.separation_specs = config.get("separation_specs", [])  # List of ComponentSeparationSpec
         self.input_stream = None
         self.output_stream1 = None  # Product 1
         self.output_stream2 = None  # Product 2

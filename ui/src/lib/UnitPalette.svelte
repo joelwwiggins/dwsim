@@ -2,9 +2,20 @@
   const unitTypes = [
     { id: 'mixer', label: 'Mixer', icon: '🔄', color: '#ff6b6b' },
     { id: 'heater', label: 'Heater', icon: '🔥', color: '#4ecdc4' },
+    { id: 'cooler', label: 'Cooler', icon: '❄️', color: '#74b9ff' },
     { id: 'valve', label: 'Valve', icon: '⚙️', color: '#45b7d1' },
     { id: 'pump', label: 'Pump', icon: '💧', color: '#96ceb4' },
-    { id: 'splitter', label: 'Splitter', icon: '↗️', color: '#ffeaa7' }
+    { id: 'splitter', label: 'Splitter', icon: '↗️', color: '#ffeaa7' },
+    { id: 'tank', label: 'Tank', icon: '🪣', color: '#a29bfe' },
+    { id: 'compressor', label: 'Compressor', icon: '🗜️', color: '#fd79a8' },
+    { id: 'expander', label: 'Expander', icon: '💨', color: '#00b894' },
+    { id: 'heat_exchanger', label: 'Heat Exchanger', icon: '🔄', color: '#e17055' },
+    { id: 'pipe', label: 'Pipe', icon: '📏', color: '#636e72' },
+    { id: 'vessel', label: 'Vessel', icon: '🏭', color: '#a29bfe' },
+    { id: 'component_separator', label: 'Component Separator', icon: '⚗️', color: '#fdcb6e' },
+    { id: 'filter', label: 'Filter', icon: '🔍', color: '#e84393' },
+    { id: 'orifice_plate', label: 'Orifice Plate', icon: '⭕', color: '#00cec9' },
+    { id: 'relief_valve', label: 'Relief Valve', icon: '🚨', color: '#d63031' }
   ]
 
   function onDragStart(event, unitType) {

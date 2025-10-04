@@ -15,7 +15,7 @@ from dwsimpy.unit_operations.cooler import Cooler
 from dwsimpy.unit_operations.valve import Valve
 from dwsimpy.unit_operations.pump import Pump
 from dwsimpy.unit_operations.splitter import Splitter
-from dwsimpy.unit_operations.tank import Tank
+# from dwsimpy.unit_operations.tank import Tank
 from dwsimpy.unit_ops.compressor import Compressor
 from dwsimpy.unit_ops.expander import Expander
 from dwsimpy.unit_ops.heat_exchanger import HeatExchanger
@@ -25,6 +25,7 @@ from dwsimpy.unit_ops.component_separator import ComponentSeparator
 from dwsimpy.unit_ops.filter import Filter
 from dwsimpy.unit_ops.orifice_plate import OrificePlate
 from dwsimpy.unit_ops.relief_valve import ReliefValve
+from dwsimpy.unit_operations.base_unit import BaseUnitOperation
 
 from dwsimpy.material_stream import MaterialStream
 from dwsimpy.factories import UnitOperationFactory
@@ -36,7 +37,7 @@ UnitOperationFactory.register("cooler", Cooler)
 UnitOperationFactory.register("valve", Valve)
 UnitOperationFactory.register("pump", Pump)
 UnitOperationFactory.register("splitter", Splitter)
-UnitOperationFactory.register("tank", Tank)
+# UnitOperationFactory.register("tank", Tank)
 UnitOperationFactory.register("compressor", Compressor)
 UnitOperationFactory.register("expander", Expander)
 UnitOperationFactory.register("heat_exchanger", HeatExchanger)

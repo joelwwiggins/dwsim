@@ -5,24 +5,25 @@ Converted from VB.NET to Python.
 This module implements the Pipe unit operation for pressure drop and flow calculations.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class Pipe(BaseClass):
+class Pipe(BaseUnitOperation):
     """
     Pipe unit operation.
 
     Calculates pressure drop and heat transfer in pipes.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.length = 100.0  # Length in m
-        self.diameter = 0.1  # Diameter in m
-        self.roughness = 0.000045  # Roughness in m
-        self.spec_mode = "length"  # length, outlet_pressure, outlet_temperature
-        self.outlet_pressure = 101325.0
-        self.outlet_temperature = 298.15
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.length = config.get("length", 100.0)  # Length in m
+        self.diameter = config.get("diameter", 0.1)  # Diameter in m
+        self.roughness = config.get("roughness", 0.000045)  # Roughness in m
+        self.spec_mode = config.get("spec_mode", "length")  # length, outlet_pressure, outlet_temperature
+        self.outlet_pressure = config.get("outlet_pressure", 101325.0)
+        self.outlet_temperature = config.get("outlet_temperature", 298.15)
         self.input_stream = None
         self.output_stream = None
         self.property_package = None

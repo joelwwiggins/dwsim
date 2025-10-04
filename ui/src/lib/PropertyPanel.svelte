@@ -18,6 +18,10 @@
         duty: 0,
         outletTemperature: 298.15
       },
+      cooler: {
+        duty: 0,
+        outletTemperature: 298.15
+      },
       valve: {
         pressureDrop: 0,
         cv: 1.0
@@ -28,6 +32,42 @@
       },
       splitter: {
         splitRatio: 0.5
+      },
+      tank: {
+        volume: 1.0,
+        initialLevel: 0.5
+      },
+      compressor: {
+        pressureRatio: 2.0,
+        efficiency: 75
+      },
+      expander: {
+        pressureRatio: 0.5,
+        efficiency: 75
+      },
+      heat_exchanger: {
+        duty: 0,
+        ua: 100
+      },
+      pipe: {
+        length: 10,
+        diameter: 0.1
+      },
+      vessel: {
+        volume: 1.0,
+        pressure: 101325
+      },
+      component_separator: {
+        splitRatio: 0.5
+      },
+      filter: {
+        pressureDrop: 0
+      },
+      orifice_plate: {
+        beta: 0.5
+      },
+      relief_valve: {
+        setPressure: 200000
       }
     }
     return defaults[type] || {}

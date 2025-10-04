@@ -22,19 +22,48 @@ class FlowsheetSolver(IFlowsheetSolver):
         self.progress = 0.0
 
     def load_flowsheet(self, unit_operations: List[IUnitOperation],
-                      streams: List[MaterialStream]) -> None:
+                      streams: List[MaterialStream], edges: List[Dict] = None) -> None:
         """Load unit operations and streams into the solver"""
         self.unit_operations = {u.id: u for u in unit_operations}
         self.streams = {s.id: s for s in streams}
+        self.edges = edges or []
 
         # Connect streams to unit operations based on connectivity
         self._connect_streams()
 
     def _connect_streams(self) -> None:
         """Connect streams to unit operations based on their connectivity"""
-        # This would be implemented based on the edge data from the UI
-        # For now, we'll assume streams are already connected
-        pass
+        if not self.edges:
+            return
+
+        # Clear existing connections
+        for unit_op in self.unit_operations.values():
+            unit_op.inlet_streams.clear()
+            unit_op.outlet_streams.clear()
+
+        # Connect streams based on edges
+        for edge in self.edges:
+            source_id = edge.get('source')
+            target_id = edge.get('target')
+            source_handle = edge.get('sourceHandle', '')
+            target_handle = edge.get('targetHandle', '')
+
+            if source_id in self.unit_operations and target_id in self.unit_operations:
+                source_unit = self.unit_operations[source_id]
+                target_unit = self.unit_operations[target_id]
+                stream_id = edge.get('id', f"stream_{source_id}_{target_id}")
+
+                # Get or create the stream
+                if stream_id not in self.streams:
+                    self.streams[stream_id] = MaterialStream(stream_id)
+
+                stream = self.streams[stream_id]
+
+                # Connect based on handle types
+                if 'output' in source_handle:
+                    source_unit.add_outlet_stream(stream)
+                if 'input' in target_handle:
+                    target_unit.add_inlet_stream(stream)
 
     def solve_flowsheet(self, flowsheet: Any) -> List[Exception]:
         """Solve the flowsheet using sequential modular approach"""

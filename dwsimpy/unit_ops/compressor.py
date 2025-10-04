@@ -5,29 +5,30 @@ Converted from VB.NET to Python.
 This module implements the Compressor unit operation for pressure increase with work.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class Compressor(BaseClass):
+class Compressor(BaseUnitOperation):
     """
     Compressor unit operation.
 
     Increases pressure in a stream with work input, calculating required power.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.calc_mode = "outlet_pressure"  # outlet_pressure, delta_p, power_required, etc.
-        self.outlet_pressure = 0.0  # Outlet pressure in Pa
-        self.delta_p = 0.0  # Pressure increase in Pa
-        self.adiabatic_efficiency = 0.75  # Adiabatic efficiency
-        self.polytropic_efficiency = 0.75  # Polytropic efficiency
-        self.power_required = 0.0  # Power required in kW
-        self.process_path = "adiabatic"  # adiabatic, polytropic
-        self.ignore_phase = False
-        self.outlet_temperature = 0.0
-        self.delta_t = 0.0
-        self.delta_q = 0.0
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.calc_mode = config.get("calc_mode", "outlet_pressure")  # outlet_pressure, delta_p, power_required, etc.
+        self.outlet_pressure = config.get("outlet_pressure", 0.0)  # Outlet pressure in Pa
+        self.delta_p = config.get("delta_p", 0.0)  # Pressure increase in Pa
+        self.adiabatic_efficiency = config.get("adiabatic_efficiency", 0.75)  # Adiabatic efficiency
+        self.polytropic_efficiency = config.get("polytropic_efficiency", 0.75)  # Polytropic efficiency
+        self.power_required = config.get("power_required", 0.0)  # Power required in kW
+        self.process_path = config.get("process_path", "adiabatic")  # adiabatic, polytropic
+        self.ignore_phase = config.get("ignore_phase", False)
+        self.outlet_temperature = config.get("outlet_temperature", 0.0)
+        self.delta_t = config.get("delta_t", 0.0)
+        self.delta_q = config.get("delta_q", 0.0)
         self.input_stream = None
         self.output_stream = None
         self.property_package = None

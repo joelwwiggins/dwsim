@@ -5,25 +5,26 @@ Converted from VB.NET to Python.
 This module implements the Expander unit operation for pressure drop with work generation.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class Expander(BaseClass):
+class Expander(BaseUnitOperation):
     """
     Expander unit operation.
 
     Reduces pressure in a stream with work generation.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.calc_mode = "outlet_pressure"  # outlet_pressure, delta_p, power_generated, etc.
-        self.outlet_pressure = 0.0  # Outlet pressure in Pa
-        self.delta_p = 0.0  # Pressure drop in Pa
-        self.adiabatic_efficiency = 0.75  # Adiabatic efficiency
-        self.polytropic_efficiency = 0.75  # Polytropic efficiency
-        self.power_generated = 0.0  # Power generated in kW
-        self.process_path = "adiabatic"  # adiabatic, polytropic
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.calc_mode = config.get("calc_mode", "outlet_pressure")  # outlet_pressure, delta_p, power_generated, etc.
+        self.outlet_pressure = config.get("outlet_pressure", 0.0)  # Outlet pressure in Pa
+        self.delta_p = config.get("delta_p", 0.0)  # Pressure drop in Pa
+        self.adiabatic_efficiency = config.get("adiabatic_efficiency", 0.75)  # Adiabatic efficiency
+        self.polytropic_efficiency = config.get("polytropic_efficiency", 0.75)  # Polytropic efficiency
+        self.power_generated = config.get("power_generated", 0.0)  # Power generated in kW
+        self.process_path = config.get("process_path", "adiabatic")  # adiabatic, polytropic
         self.ignore_phase = False
         self.outlet_temperature = 0.0
         self.delta_t = 0.0

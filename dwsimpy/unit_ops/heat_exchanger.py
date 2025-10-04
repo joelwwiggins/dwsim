@@ -5,22 +5,23 @@ Converted from VB.NET to Python.
 This module implements the Heat Exchanger unit operation for heat transfer between streams.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class HeatExchanger(BaseClass):
+class HeatExchanger(BaseUnitOperation):
     """
     Heat Exchanger unit operation.
 
     Exchanges heat between hot and cold streams.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.calc_mode = "calc_both_temp"  # calc_temp_hot_out, calc_temp_cold_out, calc_both_temp, etc.
-        self.ua = 1000.0  # Overall heat transfer coefficient * area in W/K
-        self.area = 10.0  # Heat transfer area in m²
-        self.overall_heat_transfer_coeff = 100.0  # U in W/m².K
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.calc_mode = config.get("calc_mode", "calc_both_temp")  # calc_temp_hot_out, calc_temp_cold_out, calc_both_temp, etc.
+        self.ua = config.get("ua", 1000.0)  # Overall heat transfer coefficient * area in W/K
+        self.area = config.get("area", 10.0)  # Heat transfer area in m²
+        self.overall_heat_transfer_coeff = config.get("overall_heat_transfer_coeff", 100.0)  # U in W/m².K
         self.hot_stream_in = None
         self.hot_stream_out = None
         self.cold_stream_in = None

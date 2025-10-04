@@ -5,24 +5,25 @@ Converted from VB.NET to Python.
 This module implements the Orifice Plate unit operation for pressure drop measurement.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class OrificePlate(BaseClass):
+class OrificePlate(BaseUnitOperation):
     """
     Orifice Plate unit operation.
 
     Calculates pressure drop through an orifice plate.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.orifice_diameter = 0.1  # m
-        self.pipe_diameter = 0.2  # m
-        self.beta = 0.5  # d/D
-        self.orifice_type = "flange_taps"  # corner_taps, flange_taps, radius_taps
-        self.calc_method = "homogeneous"  # homogeneous, slip
-        self.pressure_drop = 0.0
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.orifice_diameter = config.get("orifice_diameter", 0.1)  # m
+        self.pipe_diameter = config.get("pipe_diameter", 0.2)  # m
+        self.beta = config.get("beta", 0.5)  # d/D
+        self.orifice_type = config.get("orifice_type", "flange_taps")  # corner_taps, flange_taps, radius_taps
+        self.calc_method = config.get("calc_method", "homogeneous")  # homogeneous, slip
+        self.pressure_drop = config.get("pressure_drop", 0.0)
         self.input_stream = None
         self.output_stream = None
         self.property_package = None

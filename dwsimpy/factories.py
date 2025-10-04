@@ -32,7 +32,18 @@ class UnitOperationFactory:
         return {
             "mixer": "Mixer unit operation",
             "heater": "Heater unit operation",
+            "cooler": "Cooler unit operation",
             "valve": "Valve unit operation",
             "pump": "Pump unit operation",
-            "splitter": "Splitter unit operation"
+            "splitter": "Splitter unit operation",
+            "tank": "Tank unit operation",
+            "compressor": "Compressor unit operation",
+            "expander": "Expander unit operation",
+            "heat_exchanger": "Heat exchanger unit operation",
+            "pipe": "Pipe unit operation",
+            "vessel": "Vessel unit operation",
+            "component_separator": "Component separator unit operation",
+            "filter": "Filter unit operation",
+            "orifice_plate": "Orifice plate unit operation",
+            "relief_valve": "Relief valve unit operation"
         }

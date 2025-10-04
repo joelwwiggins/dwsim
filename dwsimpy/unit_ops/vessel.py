@@ -5,20 +5,21 @@ Converted from VB.NET to Python.
 This module implements the Vessel unit operation for phase separation.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class Vessel(BaseClass):
+class Vessel(BaseUnitOperation):
     """
     Vessel unit operation.
 
     Separates phases via flash calculation.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.pressure_behavior = "minimum"  # average, maximum, minimum
-        self.calculation_mode = "adiabatic"  # adiabatic, legacy
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.pressure_behavior = config.get("pressure_behavior", "minimum")  # average, maximum, minimum
+        self.calculation_mode = config.get("calculation_mode", "adiabatic")  # adiabatic, legacy
         self.input_stream = None
         self.vapor_outlet = None
         self.liquid_outlet = None

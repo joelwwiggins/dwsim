@@ -5,22 +5,23 @@ Converted from VB.NET to Python.
 This module implements the Relief Valve unit operation for safety relief.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class ReliefValve(BaseClass):
+class ReliefValve(BaseUnitOperation):
     """
     Relief Valve unit operation.
 
     Safety relief valve for pressure relief.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.set_point_pressure = 0.0  # Pa
-        self.fully_opened_pressure = 0.0  # Pa
-        self.orifice_area = 0.71e-4  # m²
-        self.discharge_coefficient = 1.0
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.set_point_pressure = config.get("set_point_pressure", 0.0)  # Pa
+        self.fully_opened_pressure = config.get("fully_opened_pressure", 0.0)  # Pa
+        self.orifice_area = config.get("orifice_area", 0.71e-4)  # m²
+        self.discharge_coefficient = config.get("discharge_coefficient", 1.0)
         self.input_stream = None
         self.output_stream = None
         self.property_package = None

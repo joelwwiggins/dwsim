@@ -5,24 +5,25 @@ Converted from VB.NET to Python.
 This module implements the Filter unit operation for cake filtration.
 """
 
-from ..shared_classes.base_class import BaseClass
+from ..unit_operations.base_unit import BaseUnitOperation
+from typing import Dict, Any
 
 
-class Filter(BaseClass):
+class Filter(BaseUnitOperation):
     """
     Filter unit operation.
 
     Performs cake filtration calculations.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.calc_mode = "simulation"  # design, simulation
-        self.total_filter_area = 1.0  # m²
-        self.specific_cake_resistance = 1e10  # m/kg
-        self.filter_medium_resistance = 1e-9  # m⁻¹
-        self.filter_cycle_time = 300.0  # s
-        self.pressure_drop = 0.0
+    def __init__(self, unit_id: str, config: Dict[str, Any]):
+        super().__init__(unit_id, config)
+        self.calc_mode = config.get("calc_mode", "simulation")  # design, simulation
+        self.total_filter_area = config.get("total_filter_area", 1.0)  # m²
+        self.specific_cake_resistance = config.get("specific_cake_resistance", 1e10)  # m/kg
+        self.filter_medium_resistance = config.get("filter_medium_resistance", 1e-9)  # m⁻¹
+        self.filter_cycle_time = config.get("filter_cycle_time", 300.0)  # s
+        self.pressure_drop = config.get("pressure_drop", 0.0)
         self.input_stream = None
         self.filtrate_outlet = None
         self.cake_outlet = None
