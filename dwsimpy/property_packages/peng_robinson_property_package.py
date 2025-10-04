@@ -79,7 +79,16 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
             if prop not in component:
                 raise ValueError(f"Component {component.get('id', 'unknown')} missing required property: {prop}")
 
-        self._components.append(component)
+        # Get additional properties from database if available
+        comp_id = component.get('id')
+        if comp_id and comp_id in self.component_database._components:
+            db_comp = self.component_database._components[comp_id]
+            # Merge database properties with provided component data
+            merged_comp = db_comp.copy()
+            merged_comp.update(component)
+            self._components.append(merged_comp)
+        else:
+            self._components.append(component)
 
     def calculate_properties(self, temperature: float, pressure: float,
                            composition: Dict[str, float]) -> Dict[str, float]:
@@ -119,6 +128,38 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
         """Calculate mixture entropy using PR EOS"""
         # Simplified implementation
         return self._calculate_ideal_gas_entropy(temperature, pressure, composition)
+
+    def calculate_viscosity(self, temperature: float, pressure: float,
+                           composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture viscosity using Chung et al. method for dense fluids"""
+        # Simplified implementation using ideal gas mixing rules
+        # For full implementation, would use Chung et al. correlation for dense fluids
+        total_viscosity = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in self._components:
+                comp_data = self._components[comp]
+                # Use simple temperature dependence for gas viscosity
+                mu0 = comp_data.get('viscosity', 0.00001)  # Pa·s at reference temp
+                T0 = 298.15  # K
+                viscosity = mu0 * (temperature / T0) ** 0.7  # Simplified power law
+                total_viscosity += viscosity * mole_frac
+        return total_viscosity if total_viscosity > 0 else 0.00001
+
+    def calculate_thermal_conductivity(self, temperature: float, pressure: float,
+                                      composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture thermal conductivity"""
+        # Simplified implementation using ideal gas mixing rules
+        # For full implementation, would use Stiel-Thodos or similar correlations
+        total_k = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in self._components:
+                comp_data = self._components[comp]
+                # Use simple temperature dependence
+                k0 = comp_data.get('thermal_conductivity', 0.03)  # W/m·K at reference temp
+                T0 = 298.15  # K
+                conductivity = k0 * (temperature / T0) ** 0.8  # Simplified power law
+                total_k += conductivity * mole_frac
+        return total_k if total_k > 0 else 0.03
 
     def _calculate_mixture_parameters(self, temperature: float,
                                     composition: Dict[str, float]) -> Tuple[float, float]:

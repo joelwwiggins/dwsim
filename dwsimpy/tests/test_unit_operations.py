@@ -52,6 +52,43 @@ class TestMaterialStream:
         # Should be stored in composition attribute
         assert self.stream.composition == composition
 
+    def test_transport_properties(self):
+        """Test transport properties calculation."""
+        self.stream.temperature = 300.0
+        self.stream.pressure = 101325
+        self.stream.set_composition({'methane': 1.0})
+
+        # Test viscosity calculation
+        viscosity = self.stream.calculate_viscosity()
+        assert viscosity > 0.0  # Should return a positive value
+
+        # Test thermal conductivity calculation
+        conductivity = self.stream.calculate_thermal_conductivity()
+        assert conductivity > 0.0  # Should return a positive value
+
+    def test_stream_save_load(self):
+        """Test stream serialization and deserialization."""
+        # Set up stream with properties
+        self.stream.temperature = 350.0
+        self.stream.pressure = 2e5
+        self.stream.mass_flow_rate = 2.5
+        self.stream.set_composition({'methane': 0.7, 'ethane': 0.3})
+
+        # Save to dict
+        data = self.stream.to_dict()
+        assert data['temperature'] == 350.0
+        assert data['pressure'] == 2e5
+        assert data['mass_flow_rate'] == 2.5
+        assert data['composition']['methane'] == 0.7
+
+        # Load from dict
+        loaded_stream = MaterialStream.from_dict(data, self.pp)
+        assert loaded_stream.temperature == 350.0
+        assert loaded_stream.pressure == 2e5
+        assert loaded_stream.mass_flow_rate == 2.5
+        assert loaded_stream.composition['methane'] == 0.7
+        assert loaded_stream.property_package == self.pp
+
 
 class TestMixer:
     """Test Mixer unit operation."""

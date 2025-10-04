@@ -10,7 +10,7 @@ from dwsimpy.unit_ops.splitter import Splitter
 from dwsimpy.unit_ops.heater import Heater
 from dwsimpy.unit_ops.valve import Valve
 from dwsimpy.unit_ops.pump import Pump
-from dwsimpy.solvers.flowsheet_solver import FlowsheetSolver
+from dwsimpy.flowsheet_solver import FlowsheetSolver
 
 
 class MockStream:
@@ -147,3 +147,44 @@ class TestIntegration:
         assert result is True
         assert outlet.pressure == 101325.0 + 200000.0
         assert outlet.mass_flow == 10.0
+
+    def test_flowsheet_save_load(self):
+        """Test flowsheet serialization and deserialization."""
+        from dwsimpy.material_stream import MaterialStream
+        from dwsimpy.unit_operations.mixer import Mixer
+        from dwsimpy.unit_operations.heater import Heater
+        from dwsimpy.property_packages.ideal_property_package import IdealPropertyPackage
+
+        # Create property package
+        pp = IdealPropertyPackage()
+
+        # Create streams
+        stream1 = MaterialStream("stream1")
+        stream1.property_package = pp
+        stream1.temperature = 300.0
+        stream1.pressure = 101325
+        stream1.mass_flow_rate = 1.0
+        stream1.set_composition({'methane': 1.0})
+
+        stream2 = MaterialStream("stream2")
+        stream2.property_package = pp
+
+        # Create unit operations
+        mixer = Mixer("mixer1", {})
+        heater = Heater("heater1", {'outlet_temperature': 400.0})
+
+        # Create solver and load flowsheet
+        solver = FlowsheetSolver()
+        solver.load_flowsheet([mixer, heater], [stream1, stream2], [])
+
+        # Save to dict
+        data = solver.to_dict()
+        assert len(data['unit_operations']) == 2
+        assert len(data['streams']) == 2
+        assert data['streams'][0]['temperature'] == 300.0
+
+        # Load from dict
+        loaded_solver = FlowsheetSolver.from_dict(data, {'IdealPropertyPackage': pp})
+        assert len(loaded_solver.unit_operations) == 2
+        assert len(loaded_solver.streams) == 2
+        assert loaded_solver.streams['stream1'].temperature == 300.0

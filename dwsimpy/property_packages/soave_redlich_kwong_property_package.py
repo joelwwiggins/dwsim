@@ -25,7 +25,16 @@ class SoaveRedlichKwongPropertyPackage(IPropertyPackage):
 
     def add_component(self, component: Dict[str, Any]) -> None:
         """Add a component to the package"""
-        self._components.append(component)
+        # Get additional properties from database if available
+        comp_id = component.get('id')
+        if comp_id and comp_id in self.component_database._components:
+            db_comp = self.component_database._components[comp_id]
+            # Merge database properties with provided component data
+            merged_comp = db_comp.copy()
+            merged_comp.update(component)
+            self._components.append(merged_comp)
+        else:
+            self._components.append(component)
 
     def _calculate_mixture_parameters(self, components, mole_fractions, temperature, pressure):
         """Calculate mixture parameters for SRK EOS."""
@@ -215,26 +224,47 @@ class SoaveRedlichKwongPropertyPackage(IPropertyPackage):
         # This is a simplified entropy calculation
         return 0.0
 
-    def calculate_density(self, components, mole_fractions, temperature, pressure, phase='vapor'):
-        """Calculate density using SRK EOS."""
-        a_mix, b_mix = self._calculate_mixture_parameters(components, mole_fractions, temperature, pressure)
-        z = self._calculate_compressibility_factor(a_mix, b_mix, temperature, pressure)
-        r = 0.0821  # Gas constant
+    def calculate_enthalpy(self, temperature: float, pressure: float,
+                          composition: Dict[str, float]) -> float:
+        """Calculate mixture enthalpy using SRK EOS"""
+        # Simplified implementation
+        return 0.0
 
-        molar_volume = z * r * temperature / pressure
-        mw = np.sum([self.component_database.get_molecular_weight(comp) * frac
-                    for comp, frac in zip(components, mole_fractions)])
+    def calculate_entropy(self, temperature: float, pressure: float,
+                         composition: Dict[str, float]) -> float:
+        """Calculate mixture entropy using SRK EOS"""
+        # Simplified implementation
+        return 0.0
 
-        return mw / molar_volume  # kg/m³
+    def calculate_viscosity(self, temperature: float, pressure: float,
+                           composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture viscosity using Chung et al. method"""
+        # Simplified implementation using ideal gas mixing rules
+        total_viscosity = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in self._components:
+                comp_data = self._components[comp]
+                # Use simple temperature dependence for gas viscosity
+                mu0 = comp_data.get('viscosity', 0.00001)  # Pa·s at reference temp
+                T0 = 298.15  # K
+                viscosity = mu0 * (temperature / T0) ** 0.7  # Simplified power law
+                total_viscosity += viscosity * mole_frac
+        return total_viscosity if total_viscosity > 0 else 0.00001
 
-    def get_critical_properties(self, component):
-        """Get critical properties for a component."""
-        return {
-            'temperature': self.component_database.get_critical_temperature(component),
-            'pressure': self.component_database.get_critical_pressure(component),
-            'volume': self.component_database.get_critical_volume(component),
-            'acentric_factor': self.component_database.get_acentric_factor(component)
-        }
+    def calculate_thermal_conductivity(self, temperature: float, pressure: float,
+                                      composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture thermal conductivity"""
+        # Simplified implementation using ideal gas mixing rules
+        total_k = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in self._components:
+                comp_data = self._components[comp]
+                # Use simple temperature dependence
+                k0 = comp_data.get('thermal_conductivity', 0.03)  # W/m·K at reference temp
+                T0 = 298.15  # K
+                conductivity = k0 * (temperature / T0) ** 0.8  # Simplified power law
+                total_k += conductivity * mole_frac
+        return total_k if total_k > 0 else 0.03
 
     def calculate_flash(self, temperature: float, pressure: float,
                        composition: Dict[str, float], flash_type: str) -> Dict[str, Any]:

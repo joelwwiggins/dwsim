@@ -49,3 +49,15 @@ class IPropertyPackage(ABC):
                          composition: Dict[str, float]) -> float:
         """Calculate mixture entropy"""
         pass
+
+    @abstractmethod
+    def calculate_viscosity(self, temperature: float, pressure: float,
+                           composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture viscosity"""
+        pass
+
+    @abstractmethod
+    def calculate_thermal_conductivity(self, temperature: float, pressure: float,
+                                      composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture thermal conductivity"""
+        pass

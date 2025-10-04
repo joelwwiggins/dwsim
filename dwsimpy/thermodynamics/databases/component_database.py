@@ -28,6 +28,8 @@ class ComponentDatabase:
             't_ref': 298.15,
             'h_formation': -285830,  # J/mol
             's_ref': 69.95,  # J/mol/K
+            'viscosity': 0.001,  # Pa·s at 298K
+            'thermal_conductivity': 0.6,  # W/m·K at 298K
             'vapor_pressure_func': self._antoine_water
         }
 
@@ -44,6 +46,8 @@ class ComponentDatabase:
             't_ref': 298.15,
             'h_formation': -74850,
             's_ref': 186.25,
+            'viscosity': 0.000011,  # Pa·s at 298K (gas)
+            'thermal_conductivity': 0.034,  # W/m·K at 298K (gas)
             'vapor_pressure_func': self._antoine_methane
         }
 

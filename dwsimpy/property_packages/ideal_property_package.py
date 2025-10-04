@@ -39,6 +39,36 @@ class IPropertyPackage:
                          composition: Dict[str, float]) -> float:
         pass
 
+    def calculate_viscosity(self, temperature: float, pressure: float,
+                           composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture viscosity using simple mixing rules"""
+        # Simplified implementation - return average of pure component viscosities
+        total_viscosity = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in _component_db:
+                # Use simple temperature dependence: μ = μ0 * exp(-A*(T-T0))
+                mu0 = _component_db[comp].get('viscosity', 0.001)  # Pa·s at reference temp
+                T0 = 298.15  # K
+                A = 0.01    # empirical constant
+                viscosity = mu0 * (1.0 / (1.0 + A * (temperature - T0)))
+                total_viscosity += viscosity * mole_frac
+        return total_viscosity if total_viscosity > 0 else 0.001
+
+    def calculate_thermal_conductivity(self, temperature: float, pressure: float,
+                                      composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture thermal conductivity using simple mixing rules"""
+        # Simplified implementation - return average of pure component conductivities
+        total_k = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in _component_db:
+                # Use simple temperature dependence: k = k0 * (T/T0)^B
+                k0 = _component_db[comp].get('thermal_conductivity', 0.6)  # W/m·K at reference temp
+                T0 = 298.15  # K
+                B = 0.5     # empirical constant
+                conductivity = k0 * (temperature / T0) ** B
+                total_k += conductivity * mole_frac
+        return total_k if total_k > 0 else 0.6
+
 
 # Simple component database
 _component_db = {
@@ -54,6 +84,8 @@ _component_db = {
         't_ref': 298.15,
         'h_formation': -285830,
         's_ref': 69.95,
+        'viscosity': 0.001,  # Pa·s at 298K
+        'thermal_conductivity': 0.6,  # W/m·K at 298K
         'vapor_pressure_func': lambda t: 1e5 * (t > 373 and 0.1 or 1.0)  # Simplified
     },
     'methane': {
@@ -68,6 +100,8 @@ _component_db = {
         't_ref': 298.15,
         'h_formation': -74850,
         's_ref': 186.25,
+        'viscosity': 0.000011,  # Pa·s at 298K (gas)
+        'thermal_conductivity': 0.034,  # W/m·K at 298K (gas)
         'vapor_pressure_func': lambda t: 1e5 * (t > 111 and 0.1 or 1.0)  # Simplified
     }
 }
@@ -135,6 +169,36 @@ class IdealPropertyPackage(IPropertyPackage):
                          composition: Dict[str, float]) -> float:
         """Calculate mixture entropy"""
         return self._calculate_ideal_gas_entropy(temperature, pressure, composition)
+
+    def calculate_viscosity(self, temperature: float, pressure: float,
+                           composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture viscosity using simple mixing rules"""
+        # Simplified implementation - return average of pure component viscosities
+        total_viscosity = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in _component_db:
+                # Use simple temperature dependence: μ = μ0 * exp(-A*(T-T0))
+                mu0 = _component_db[comp].get('viscosity', 0.001)  # Pa·s at reference temp
+                T0 = 298.15  # K
+                A = 0.01    # empirical constant
+                viscosity = mu0 * (1.0 / (1.0 + A * (temperature - T0)))
+                total_viscosity += viscosity * mole_frac
+        return total_viscosity if total_viscosity > 0 else 0.001
+
+    def calculate_thermal_conductivity(self, temperature: float, pressure: float,
+                                      composition: Dict[str, float], phase: str = 'liquid') -> float:
+        """Calculate mixture thermal conductivity using simple mixing rules"""
+        # Simplified implementation - return average of pure component conductivities
+        total_k = 0.0
+        for comp, mole_frac in composition.items():
+            if comp in _component_db:
+                # Use simple temperature dependence: k = k0 * (T/T0)^B
+                k0 = _component_db[comp].get('thermal_conductivity', 0.6)  # W/m·K at reference temp
+                T0 = 298.15  # K
+                B = 0.5     # empirical constant
+                conductivity = k0 * (temperature / T0) ** B
+                total_k += conductivity * mole_frac
+        return total_k if total_k > 0 else 0.6
 
     def _calculate_ideal_gas_enthalpy(self, temperature: float, composition: Dict[str, float]) -> float:
         """Calculate ideal gas enthalpy"""

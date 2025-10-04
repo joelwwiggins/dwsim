@@ -136,3 +136,91 @@ class FlowsheetSolver(IFlowsheetSolver):
         self.progress = 0.0
         self.unit_operations.clear()
         self.streams.clear()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize flowsheet to dictionary"""
+        return {
+            'unit_operations': [
+                {
+                    'id': unit.id,
+                    'type': type(unit).__name__,
+                    'config': unit.parameters,
+                    'name': unit.name
+                }
+                for unit in self.unit_operations.values()
+            ],
+            'streams': [stream.to_dict() for stream in self.streams.values()],
+            'edges': getattr(self, 'edges', []),
+            'solver_settings': {
+                'convergence_tolerance': self.convergence_tolerance,
+                'max_iterations': self.max_iterations
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], property_packages: Dict[str, Any] = None) -> 'FlowsheetSolver':
+        """Deserialize flowsheet from dictionary"""
+        solver = cls()
+        
+        # Restore solver settings
+        settings = data.get('solver_settings', {})
+        solver.convergence_tolerance = settings.get('convergence_tolerance', 1e-6)
+        solver.max_iterations = settings.get('max_iterations', 100)
+        
+        # Create unit operations
+        unit_operations = []
+        for unit_data in data.get('unit_operations', []):
+            unit_type = unit_data['type']
+            unit_id = unit_data['id']
+            config = unit_data.get('config', {})
+            
+            # Import unit operation classes dynamically
+            if unit_type == 'Mixer':
+                from .unit_operations.mixer import Mixer
+                unit = Mixer(unit_id, config)
+            elif unit_type == 'Heater':
+                from .unit_operations.heater import Heater
+                unit = Heater(unit_id, config)
+            elif unit_type == 'Valve':
+                from .unit_operations.valve import Valve
+                unit = Valve(unit_id, config)
+            elif unit_type == 'Pump':
+                from .unit_operations.pump import Pump
+                unit = Pump(unit_id, config)
+            elif unit_type == 'Splitter':
+                from .unit_operations.splitter import Splitter
+                unit = Splitter(unit_id, config)
+            else:
+                raise ValueError(f"Unknown unit operation type: {unit_type}")
+            
+            unit_operations.append(unit)
+        
+        # Create streams
+        streams = []
+        property_packages = property_packages or {}
+        for stream_data in data.get('streams', []):
+            # Get property package for this stream
+            pp_type = stream_data.get('property_package_type')
+            pp = property_packages.get(pp_type) if pp_type else None
+            stream = MaterialStream.from_dict(stream_data, pp)
+            streams.append(stream)
+        
+        # Load flowsheet
+        edges = data.get('edges', [])
+        solver.load_flowsheet(unit_operations, streams, edges)
+        
+        return solver
+
+    def save_to_file(self, filepath: str) -> None:
+        """Save flowsheet to JSON file"""
+        import json
+        with open(filepath, 'w') as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    @classmethod
+    def load_from_file(cls, filepath: str, property_packages: Dict[str, Any] = None) -> 'FlowsheetSolver':
+        """Load flowsheet from JSON file"""
+        import json
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        return cls.from_dict(data, property_packages)

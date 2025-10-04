@@ -118,6 +118,22 @@ class MaterialStream:
             )
         return 0.0
 
+    def calculate_viscosity(self, phase: str = 'liquid') -> float:
+        """Calculate stream viscosity"""
+        if self.property_package and self.composition:
+            return self.property_package.calculate_viscosity(
+                self.temperature, self.pressure, self.composition, phase
+            )
+        return 0.0
+
+    def calculate_thermal_conductivity(self, phase: str = 'liquid') -> float:
+        """Calculate stream thermal conductivity"""
+        if self.property_package and self.composition:
+            return self.property_package.calculate_thermal_conductivity(
+                self.temperature, self.pressure, self.composition, phase
+            )
+        return 0.0
+
     def perform_flash(self) -> Dict[str, Any]:
         """Perform flash calculation"""
         if self.property_package and self.composition:
@@ -133,3 +149,44 @@ class MaterialStream:
                 self.temperature, self.pressure, self.composition
             )
         return self.get_properties()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize stream to dictionary for saving"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'temperature': self.temperature,
+            'pressure': self.pressure,
+            'mass_flow_rate': self.mass_flow_rate,
+            'molar_flow_rate': self.molar_flow_rate,
+            'composition': self.composition.copy(),
+            'phase': self.phase,
+            'property_package_type': type(self.property_package).__name__ if self.property_package else None
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], property_package: Optional[IPropertyPackage] = None) -> 'MaterialStream':
+        """Deserialize stream from dictionary"""
+        stream = cls(data['id'], data.get('name'))
+        stream.temperature = data.get('temperature', 298.15)
+        stream.pressure = data.get('pressure', 101325)
+        stream.mass_flow_rate = data.get('mass_flow_rate', 0.0)
+        stream.molar_flow_rate = data.get('molar_flow_rate', 0.0)
+        stream.composition = data.get('composition', {}).copy()
+        stream.phase = data.get('phase', 'liquid')
+        stream.property_package = property_package
+        return stream
+
+    def save_to_file(self, filepath: str) -> None:
+        """Save stream to JSON file"""
+        import json
+        with open(filepath, 'w') as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    @classmethod
+    def load_from_file(cls, filepath: str, property_package: Optional[IPropertyPackage] = None) -> 'MaterialStream':
+        """Load stream from JSON file"""
+        import json
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        return cls.from_dict(data, property_package)
