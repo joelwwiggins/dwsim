@@ -27,13 +27,13 @@ UnitOperationFactory.register("splitter", Splitter)
 app = FastAPI(title="DWSIM Python API", version="1.0.0")
 
 # Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Svelte dev server
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["http://localhost:5173"],  # Svelte dev server
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # Pydantic models for API
 class NodeData(BaseModel):
@@ -50,8 +50,8 @@ class EdgeData(BaseModel):
     targetHandle: Optional[str] = None
 
 class FlowsheetData(BaseModel):
-    nodes: List[NodeData]
-    edges: List[EdgeData]
+    nodes: List[Dict[str, Any]]  # Simplified
+    edges: List[Dict[str, Any]]  # Simplified
 
 class SimulationResult(BaseModel):
     success: bool
@@ -59,17 +59,26 @@ class SimulationResult(BaseModel):
     results: Optional[Dict[str, Any]] = None
 
 # Global flowsheet solver instance
-flowsheet_solver = FlowsheetSolver()
+try:
+    flowsheet_solver = FlowsheetSolver()
+    print("Flowsheet solver initialized successfully")
+except Exception as e:
+    print(f"Error initializing flowsheet solver: {e}")
+    flowsheet_solver = None
 
 @app.post("/api/flowsheet/load", response_model=SimulationResult)
 async def load_flowsheet(data: FlowsheetData):
     """Load a flowsheet from the UI"""
     try:
+        if flowsheet_solver is None:
+            raise HTTPException(status_code=500, detail="Flowsheet solver not initialized")
+
         # Convert UI nodes to unit operations
         unit_operations_list = []
         streams = []
 
         for node in data.nodes:
+            print(f"Creating unit operation: {node.type}, {node.id}")
             unit_op = UnitOperationFactory.create_unit_operation(
                 node.type,
                 node.id,
@@ -82,8 +91,10 @@ async def load_flowsheet(data: FlowsheetData):
             stream = MaterialStream(edge.id)
             streams.append(stream)
 
+        print(f"Loading flowsheet with {len(unit_operations_list)} units and {len(streams)} streams")
         # Load into solver
         flowsheet_solver.load_flowsheet(unit_operations_list, streams)
+        print("Flowsheet loaded successfully")
 
         return SimulationResult(
             success=True,
@@ -92,6 +103,9 @@ async def load_flowsheet(data: FlowsheetData):
         )
 
     except Exception as e:
+        print(f"Error in load_flowsheet: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Failed to load flowsheet: {str(e)}")
 
 @app.post("/api/simulation/run", response_model=SimulationResult)

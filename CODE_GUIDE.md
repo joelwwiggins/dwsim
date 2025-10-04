@@ -150,3 +150,36 @@ The objects are interconnected in many ways:
 The **Flowsheet Solver** is a separate entity which resolves the ordering required to solve the flowsheet, calling the calculation routines for each object in the determined sequence and monitoring the solving task for errors.
 
 The [order](https://github.com/DanWBR/dwsim6/blob/a0eb9fdc2be9bb7bde466e4bd0e3219271f57394/DWSIM.FlowsheetSolver/FlowsheetSolver.vb#L772) in which the calculation objects are calculated is defined by the connections between them. The user can also define a custom calculation order before the solver starts.
+
+## Python Conversion (DWSIMpy)
+
+In 2025, DWSIM was converted to Python to improve cross-platform compatibility, ease of use, and integration with scientific computing libraries. The Python version, called DWSIMpy, maintains the same core architecture but uses modern Python features like type hints, ABCs, and NumPy/SciPy for numerical computations.
+
+### Key Differences from .NET Version
+
+- **Language**: Python 3.9+ instead of VB.NET/C#.
+- **Libraries**: Uses NumPy, SciPy, Matplotlib for calculations and plotting.
+- **UI**: Web-based UI with Streamlit for simplicity, with plans for desktop UI with PyQt.
+- **Structure**: Same modular structure with interfaces, property packages, unit operations, solvers.
+- **Performance**: Leverages NumPy for vectorized operations, potentially faster for large simulations.
+
+### Architecture
+
+DWSIMpy follows the same interface-based design:
+
+- **Interfaces**: Defined in `interfaces/` with ABCs.
+- **Shared Classes**: Base classes for simulation objects in `shared_classes/`.
+- **Property Packages**: EOS implementations in `property_packages/`.
+- **Unit Operations**: Process units in `unit_ops/`.
+- **Solvers**: Flowsheet and numerical solvers in `solvers/`.
+- **Streams**: Material streams in `streams/`.
+- **Thermo**: Activity models in `thermo/`.
+- **UI**: Web UI in `ui/`.
+
+### Running DWSIMpy
+
+1. Install dependencies: `pip install -r requirements.txt`
+2. Run tests: `pytest`
+3. Start UI: `streamlit run ui/app.py`
+
+The Python version is fully functional for basic flowsheet simulations and is being extended for advanced features.

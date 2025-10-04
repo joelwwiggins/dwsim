@@ -1,0 +1,26 @@
+{
+    "name": "DWSIM Python Dev Container",
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "features": {
+        "ghcr.io/devcontainers/features/desktop-lite:1.0": {
+            "password": "vscode"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-vscode.vscode-json",
+                "ms-vscode.vscode-yaml"
+            ]
+        }
+    },
+    "mounts": [
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached"
+    ],
+    "containerEnv": {
+        "DISPLAY": "${localEnv:DISPLAY}"
+    },
+    "runArgs": ["--privileged"],
+    "postCreateCommand": "pip install -r dwsimpy/requirements.txt && pip install -e dwsimpy"
+}

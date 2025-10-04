@@ -8,11 +8,12 @@ This module implements the sequential modular flowsheet solver.
 from typing import List, Dict, Any
 import logging
 import copy
+from ..interfaces.iflowsheet_solver import IFlowsheetSolver
 
 logger = logging.getLogger(__name__)
 
 
-class FlowsheetSolver:
+class FlowsheetSolver(IFlowsheetSolver):
     """
     Sequential modular flowsheet solver.
 
@@ -42,13 +43,15 @@ class FlowsheetSolver:
         if name not in self.recycle_streams:
             self.recycle_streams.append(name)
 
-    def solve(self) -> bool:
+    def solve_flowsheet(self, flowsheet: Any) -> List[Exception]:
         """
         Solve the flowsheet.
 
-        Returns True if converged, False otherwise.
+        Returns list of exceptions encountered.
         """
         logger.info("Starting flowsheet calculation")
+
+        errors = []
 
         # Initialize convergence tracking
         prev_values = self._get_convergence_values()
@@ -60,7 +63,6 @@ class FlowsheetSolver:
             prev_values = self._get_convergence_values()
 
             converged = True
-            errors = []
 
             for unit_op in self.unit_operations:
                 try:
@@ -68,19 +70,28 @@ class FlowsheetSolver:
                     logger.debug(f"Calculated {unit_op.component_name}")
                 except Exception as e:
                     logger.error(f"Error calculating {unit_op.component_name}: {e}")
-                    errors.append(str(e))
-                    converged = False
+                    errors.append(e)
 
             # Check convergence
             if converged and self._check_convergence(prev_values):
                 logger.info("Flowsheet converged")
-                return True
+                return errors  # Return empty or with warnings
 
             # Handle recycles - tear streams
             self._update_recycle_streams()
 
         logger.warning("Flowsheet did not converge")
-        return False
+        errors.append(Exception("Flowsheet did not converge"))
+        return errors
+
+    def solve(self) -> bool:
+        """
+        Solve the flowsheet.
+
+        Returns True if converged, False otherwise.
+        """
+        errors = self.solve_flowsheet(None)
+        return len(errors) == 0
 
     def _get_convergence_values(self) -> Dict[str, float]:
         """Get current values of variables to check for convergence."""

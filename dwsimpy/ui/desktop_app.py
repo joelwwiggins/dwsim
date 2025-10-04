@@ -15,9 +15,9 @@ from PyQt6.QtGui import QPen, QBrush, QColor, QAction, QDrag
 from PyQt6.QtCore import QMimeData
 import networkx as nx
 
-from ..unit_ops.mixer import Mixer
-from ..unit_ops.heater import Heater
-from ..streams.material_stream import MaterialStream
+from dwsimpy.unit_ops.mixer import Mixer
+from dwsimpy.unit_ops.heater import Heater
+from dwsimpy.streams.material_stream import MaterialStream
 
 
 class UnitItem(QGraphicsEllipseItem):

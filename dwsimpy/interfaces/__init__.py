@@ -17,6 +17,11 @@ from .property_package import (
     IPropertyPackageMethods
 )
 
+from .iflowsheet import IFlowsheet
+from .iunit_operation import IUnitOperation
+from .imaterial_stream import IMaterialStream
+from .iflowsheet_solver import IFlowsheetSolver
+
 __all__ = [
     'FlashCalculationType',
     'FlashMethod',
@@ -26,5 +31,9 @@ __all__ = [
     'FlashCalculationResult',
     'IFlashAlgorithm',
     'IPropertyPackage',
-    'IPropertyPackageMethods'
+    'IPropertyPackageMethods',
+    'IFlowsheet',
+    'IUnitOperation',
+    'IMaterialStream',
+    'IFlowsheetSolver'
 ]

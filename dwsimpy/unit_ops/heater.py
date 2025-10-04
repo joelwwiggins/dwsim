@@ -6,9 +6,11 @@ This module implements the Heater unit operation for energy addition.
 """
 
 from ..shared_classes.base_class import BaseClass
+from ..interfaces.iunit_operation import IUnitOperation
+from typing import List, Any
 
 
-class Heater(BaseClass):
+class Heater(BaseClass, IUnitOperation):
     """
     Heater unit operation.
 
@@ -24,6 +26,34 @@ class Heater(BaseClass):
         self.input_stream = None
         self.output_stream = None
         self.property_package = None
+        self._dimensions: List[Any] = []
+        self._selected_equipment_type = "Heater"
+        self._equipment_types = ["Heater"]
+
+    @property
+    def dimensions(self) -> List[Any]:
+        """Get the dimensions of the unit operation."""
+        return self._dimensions
+
+    @dimensions.setter
+    def dimensions(self, value: List[Any]):
+        """Set the dimensions of the unit operation."""
+        self._dimensions = value
+
+    @property
+    def selected_equipment_type(self) -> str:
+        """Get the selected equipment type."""
+        return self._selected_equipment_type
+
+    @selected_equipment_type.setter
+    def selected_equipment_type(self, value: str):
+        """Set the selected equipment type."""
+        self._selected_equipment_type = value
+
+    @property
+    def equipment_types(self) -> List[str]:
+        """Get the list of available equipment types."""
+        return self._equipment_types
 
     def calculate(self):
         """Perform the heater calculation."""
