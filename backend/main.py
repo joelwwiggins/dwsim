@@ -11,29 +11,52 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from dwsimpy.flowsheet_solver import FlowsheetSolver
 from dwsimpy.unit_operations.mixer import Mixer
 from dwsimpy.unit_operations.heater import Heater
+from dwsimpy.unit_operations.cooler import Cooler
 from dwsimpy.unit_operations.valve import Valve
 from dwsimpy.unit_operations.pump import Pump
 from dwsimpy.unit_operations.splitter import Splitter
+from dwsimpy.unit_operations.tank import Tank
+from dwsimpy.unit_ops.compressor import Compressor
+from dwsimpy.unit_ops.expander import Expander
+from dwsimpy.unit_ops.heat_exchanger import HeatExchanger
+from dwsimpy.unit_ops.pipe import Pipe
+from dwsimpy.unit_ops.vessel import Vessel
+from dwsimpy.unit_ops.component_separator import ComponentSeparator
+from dwsimpy.unit_ops.filter import Filter
+from dwsimpy.unit_ops.orifice_plate import OrificePlate
+from dwsimpy.unit_ops.relief_valve import ReliefValve
+
 from dwsimpy.material_stream import MaterialStream
 from dwsimpy.factories import UnitOperationFactory
 
 # Register unit operations
 UnitOperationFactory.register("mixer", Mixer)
 UnitOperationFactory.register("heater", Heater)
+UnitOperationFactory.register("cooler", Cooler)
 UnitOperationFactory.register("valve", Valve)
 UnitOperationFactory.register("pump", Pump)
 UnitOperationFactory.register("splitter", Splitter)
+UnitOperationFactory.register("tank", Tank)
+UnitOperationFactory.register("compressor", Compressor)
+UnitOperationFactory.register("expander", Expander)
+UnitOperationFactory.register("heat_exchanger", HeatExchanger)
+UnitOperationFactory.register("pipe", Pipe)
+UnitOperationFactory.register("vessel", Vessel)
+UnitOperationFactory.register("component_separator", ComponentSeparator)
+UnitOperationFactory.register("filter", Filter)
+UnitOperationFactory.register("orifice_plate", OrificePlate)
+UnitOperationFactory.register("relief_valve", ReliefValve)
 
 app = FastAPI(title="DWSIM Python API", version="1.0.0")
 
 # Configure CORS
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:5173"],  # Svelte dev server
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Svelte dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Pydantic models for API
 class NodeData(BaseModel):
@@ -92,8 +115,8 @@ async def load_flowsheet(data: FlowsheetData):
             streams.append(stream)
 
         print(f"Loading flowsheet with {len(unit_operations_list)} units and {len(streams)} streams")
-        # Load into solver
-        flowsheet_solver.load_flowsheet(unit_operations_list, streams)
+        # Load into solver with edge connectivity
+        flowsheet_solver.load_flowsheet(unit_operations_list, streams, data.edges)
         print("Flowsheet loaded successfully")
 
         return SimulationResult(
