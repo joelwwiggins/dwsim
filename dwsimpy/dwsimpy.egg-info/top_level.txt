@@ -1,0 +1,12 @@
+core
+interfaces
+property_packages
+shared_classes
+solvers
+streams
+tests
+thermo
+ui
+unit_ops
+utils
+venv

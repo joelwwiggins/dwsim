@@ -6,11 +6,11 @@ Converted from VB.NET to Python.
 """
 
 import streamlit as st
-from ..solvers.flowsheet_solver import FlowsheetSolver
-from ..streams.material_stream import MaterialStream
-from ..unit_ops.mixer import Mixer
-from ..unit_ops.heater import Heater
-from ..property_packages.ideal_property_package import IdealPropertyPackage
+from dwsimpy.solvers.flowsheet_solver import FlowsheetSolver
+from dwsimpy.streams.material_stream import MaterialStream
+from dwsimpy.unit_ops.mixer import Mixer
+from dwsimpy.unit_ops.heater import Heater
+from dwsimpy.property_packages.ideal_property_package import IdealPropertyPackage
 
 
 def main():
