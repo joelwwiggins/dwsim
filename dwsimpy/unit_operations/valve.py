@@ -11,7 +11,7 @@ class Valve(BaseUnitOperation):
 
     def __init__(self, unit_id: str, config: Dict[str, Any]):
         super().__init__(unit_id, config)
-        self.pressure_drop = config.get('pressure_drop', 0.0)  # Pa
+        self.outlet_pressure = config.get('outlet_pressure', 101325)  # Pa
 
     def solve(self) -> float:
         """Solve the valve equations"""
@@ -24,16 +24,17 @@ class Valve(BaseUnitOperation):
         inlet_stream = self.inlet_streams[0]
         outlet_stream = self.outlet_streams[0]
 
-        # Valve simply applies pressure drop
+        # Valve sets outlet pressure
         outlet_stream.mass_flow_rate = inlet_stream.mass_flow_rate
         outlet_stream.temperature = inlet_stream.temperature
-        outlet_stream.pressure = inlet_stream.pressure - self.pressure_drop
+        outlet_stream.pressure = self.outlet_pressure
+        outlet_stream.composition = inlet_stream.composition.copy()  # Copy composition
 
         # Store results
         self.results = {
-            'pressure_drop': self.pressure_drop,
+            'outlet_pressure': self.outlet_pressure,
             'inlet_pressure': inlet_stream.pressure,
-            'outlet_pressure': outlet_stream.pressure
+            'pressure_drop': inlet_stream.pressure - self.outlet_pressure
         }
 
         return 0.0

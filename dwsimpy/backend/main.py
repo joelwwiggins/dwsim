@@ -30,6 +30,7 @@ from dwsimpy.unit_operations.base_unit import BaseUnitOperation
 from dwsimpy.material_stream import MaterialStream
 from dwsimpy.factories import UnitOperationFactory
 from dwsimpy.property_packages.ideal_property_package import IdealPropertyPackage
+from dwsimpy.property_packages.peng_robinson_property_package import PengRobinsonPropertyPackage
 
 app = FastAPI(title="DWSIM Python API", version="1.0.0")
 
@@ -124,6 +125,14 @@ async def load_flowsheet(data: FlowsheetData):
         # Load into solver with edge connectivity
         flowsheet_solver.load_flowsheet(unit_operations_list, streams, data.edges)
         print("Flowsheet loaded successfully")
+
+        # Initialize property packages
+        ideal_pp = IdealPropertyPackage()
+        pr_pp = PengRobinsonPropertyPackage()
+        
+        # Assign property packages to streams
+        for stream in flowsheet_solver.streams.values():
+            stream.property_package = pr_pp  # Use Peng-Robinson for more accurate calculations
 
         return SimulationResult(
             success=True,

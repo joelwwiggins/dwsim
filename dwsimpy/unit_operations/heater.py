@@ -12,6 +12,7 @@ class Heater(BaseUnitOperation):
     def __init__(self, unit_id: str, config: Dict[str, Any]):
         super().__init__(unit_id, config)
         self.heat_duty = config.get('heat_duty', 0.0)  # W
+        self.outlet_temperature = config.get('outlet_temperature')  # Optional target temperature
         self.pressure_drop = config.get('pressure_drop', 0.0)  # Pa
         self.efficiency = config.get('efficiency', 1.0)  # dimensionless
 
@@ -26,23 +27,31 @@ class Heater(BaseUnitOperation):
         inlet_stream = self.inlet_streams[0]
         outlet_stream = self.outlet_streams[0]
 
-        # Simple energy balance
-        # Assuming constant specific heat capacity for now
-        cp = 4186  # J/kg·K (water)
-        mass_flow = inlet_stream.mass_flow_rate
-
-        if mass_flow > 0:
-            delta_t = (self.heat_duty * self.efficiency) / (mass_flow * cp)
-            outlet_temp = inlet_stream.temperature + delta_t
+        # If outlet temperature is specified, use it directly
+        if self.outlet_temperature is not None:
+            outlet_temp = self.outlet_temperature
+            # Calculate required heat duty (simplified)
+            if inlet_stream.mass_flow_rate > 0:
+                cp_avg = 4186  # J/kg·K approximation
+                self.heat_duty = inlet_stream.mass_flow_rate * cp_avg * (outlet_temp - inlet_stream.temperature) / self.efficiency
+            else:
+                self.heat_duty = 0.0
         else:
-            outlet_temp = inlet_stream.temperature
+            # Use heat duty to calculate outlet temperature
+            if inlet_stream.mass_flow_rate > 0:
+                cp_avg = 4186  # J/kg·K approximation
+                delta_t = (self.heat_duty * self.efficiency) / (inlet_stream.mass_flow_rate * cp_avg)
+                outlet_temp = inlet_stream.temperature + delta_t
+            else:
+                outlet_temp = inlet_stream.temperature
 
         outlet_pressure = inlet_stream.pressure - self.pressure_drop
 
         # Set outlet stream properties
-        outlet_stream.mass_flow_rate = mass_flow
+        outlet_stream.mass_flow_rate = inlet_stream.mass_flow_rate
         outlet_stream.temperature = outlet_temp
         outlet_stream.pressure = outlet_pressure
+        outlet_stream.composition = inlet_stream.composition.copy()
 
         # Store results
         self.results = {

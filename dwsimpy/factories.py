@@ -47,3 +47,101 @@ class UnitOperationFactory:
             "orifice_plate": "Orifice plate unit operation",
             "relief_valve": "Relief valve unit operation"
         }
+
+
+# Import and register unit operations
+try:
+    from .unit_operations.mixer import Mixer
+    UnitOperationFactory.register("mixer", Mixer)
+except ImportError:
+    pass
+
+try:
+    from .unit_operations.heater import Heater
+    UnitOperationFactory.register("heater", Heater)
+except ImportError:
+    pass
+
+try:
+    from .unit_operations.cooler import Cooler
+    UnitOperationFactory.register("cooler", Cooler)
+except ImportError:
+    pass
+
+try:
+    from .unit_operations.valve import Valve
+    UnitOperationFactory.register("valve", Valve)
+except ImportError:
+    pass
+
+try:
+    from .unit_operations.pump import Pump
+    UnitOperationFactory.register("pump", Pump)
+except ImportError:
+    pass
+
+try:
+    from .unit_operations.splitter import Splitter
+    UnitOperationFactory.register("splitter", Splitter)
+except ImportError:
+    pass
+
+try:
+    from .unit_operations.tank import Tank
+    UnitOperationFactory.register("tank", Tank)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.compressor import Compressor
+    UnitOperationFactory.register("compressor", Compressor)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.expander import Expander
+    UnitOperationFactory.register("expander", Expander)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.heat_exchanger import HeatExchanger
+    UnitOperationFactory.register("heat_exchanger", HeatExchanger)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.pipe import Pipe
+    UnitOperationFactory.register("pipe", Pipe)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.vessel import Vessel
+    UnitOperationFactory.register("vessel", Vessel)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.component_separator import ComponentSeparator
+    UnitOperationFactory.register("component_separator", ComponentSeparator)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.filter import Filter
+    UnitOperationFactory.register("filter", Filter)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.orifice_plate import OrificePlate
+    UnitOperationFactory.register("orifice_plate", OrificePlate)
+except ImportError:
+    pass
+
+try:
+    from .unit_ops.relief_valve import ReliefValve
+    UnitOperationFactory.register("relief_valve", ReliefValve)
+except ImportError:
+    pass

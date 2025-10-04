@@ -29,6 +29,7 @@ class Splitter(BaseUnitOperation):
             stream.mass_flow_rate = inlet_flow * ratio
             stream.temperature = inlet_stream.temperature
             stream.pressure = inlet_stream.pressure
+            stream.composition = inlet_stream.composition.copy()  # Copy composition
 
         # Store results
         self.results = {

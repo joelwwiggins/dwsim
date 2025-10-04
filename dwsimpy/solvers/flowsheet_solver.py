@@ -43,6 +43,16 @@ class FlowsheetSolver(IFlowsheetSolver):
         if name not in self.recycle_streams:
             self.recycle_streams.append(name)
 
+    def load_flowsheet(self, unit_operations: List[Any], streams: Dict[str, Any], edges: List[Dict[str, Any]]):
+        """Load unit operations and streams into the solver."""
+        self.unit_operations = unit_operations
+        self.streams = streams
+        
+        # Process edges to identify recycle streams (simplified)
+        # In a real implementation, this would analyze the graph for cycles
+        # For now, assume no recycles
+        self.recycle_streams = []
+
     def solve_flowsheet(self, flowsheet: Any) -> List[Exception]:
         """
         Solve the flowsheet.

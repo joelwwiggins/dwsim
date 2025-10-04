@@ -17,4 +17,4 @@ from . import math
 from . import drawing
 from . import serialization
 from . import global_settings
-from . import logging
+from . import dwsim_logging as logging

@@ -3,6 +3,10 @@ Material stream class for DWSIM Python implementation.
 """
 
 from typing import Dict, Any, Optional
+try:
+    from .thermodynamics.interfaces.iproperty_package import IPropertyPackage
+except ImportError:
+    IPropertyPackage = Any  # Fallback
 
 
 class MaterialStream:
@@ -11,6 +15,9 @@ class MaterialStream:
     def __init__(self, stream_id: str, name: Optional[str] = None):
         self.id = stream_id
         self.name = name or stream_id
+
+        # Property package for thermodynamic calculations
+        self.property_package: Optional[IPropertyPackage] = None
 
         # Thermodynamic properties
         self.temperature = 298.15  # K (25°C)
@@ -94,3 +101,35 @@ class MaterialStream:
         new_stream.composition = self.composition.copy()
         new_stream.phase = self.phase
         return new_stream
+
+    def calculate_enthalpy(self) -> float:
+        """Calculate stream enthalpy"""
+        if self.property_package and self.composition:
+            return self.property_package.calculate_enthalpy(
+                self.temperature, self.pressure, self.composition
+            )
+        return 0.0
+
+    def calculate_entropy(self) -> float:
+        """Calculate stream entropy"""
+        if self.property_package and self.composition:
+            return self.property_package.calculate_entropy(
+                self.temperature, self.pressure, self.composition
+            )
+        return 0.0
+
+    def perform_flash(self) -> Dict[str, Any]:
+        """Perform flash calculation"""
+        if self.property_package and self.composition:
+            return self.property_package.calculate_flash(
+                self.temperature, self.pressure, self.composition
+            )
+        return {}
+
+    def get_calculated_properties(self) -> Dict[str, Any]:
+        """Get calculated thermodynamic properties"""
+        if self.property_package and self.composition:
+            return self.property_package.calculate_properties(
+                self.temperature, self.pressure, self.composition
+            )
+        return self.get_properties()
