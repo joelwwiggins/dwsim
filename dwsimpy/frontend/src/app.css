@@ -1,0 +1,204 @@
+/* Reset and base styles */
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	background-color: #f5f5f5;
+	color: #333;
+}
+
+/* Utility classes */
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1rem;
+}
+
+.flex {
+	display: flex;
+}
+
+.flex-col {
+	flex-direction: column;
+}
+
+.items-center {
+	align-items: center;
+}
+
+.justify-between {
+	justify-content: space-between;
+}
+
+.gap-4 {
+	gap: 1rem;
+}
+
+.p-4 {
+	padding: 1rem;
+}
+
+.bg-white {
+	background-color: white;
+}
+
+.rounded {
+	border-radius: 0.375rem;
+}
+
+.shadow {
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Svelte Flow custom styles */
+:global(.svelte-flow) {
+	height: 100%;
+}
+
+:global(.svelte-flow__node) {
+	border-radius: 8px;
+	border: 2px solid #ddd;
+	background: white;
+	padding: 12px;
+	min-width: 140px;
+	min-height: 60px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s;
+}
+
+/* Stream node specific styles */
+:global(.svelte-flow__node:not([data-unit-type])) {
+	border-color: #10b981;
+	background: #f0fdf4;
+	min-width: 120px;
+	min-height: 50px;
+}
+
+:global(.svelte-flow__node:not([data-unit-type]):hover) {
+	border-color: #059669;
+	box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+:global(.svelte-flow__node:not([data-unit-type]).selected) {
+	border-color: #10b981;
+	box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+:global(.svelte-flow__node:hover) {
+	border-color: #2563eb;
+	box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+:global(.svelte-flow__node.selected) {
+	border-color: #2563eb;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+:global(.svelte-flow__node .svelte-flow__node-label) {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #374151;
+	margin-top: 4px;
+}
+
+:global(.svelte-flow__node .unit-icon) {
+	font-size: 1.5rem;
+	margin-bottom: 4px;
+}
+
+:global(.svelte-flow__edge) {
+	stroke: #6b7280;
+	stroke-width: 2;
+}
+
+:global(.svelte-flow__edge.selected) {
+	stroke: #2563eb;
+	stroke-width: 3;
+}
+
+:global(.svelte-flow__edge:hover) {
+	stroke: #2563eb;
+}
+
+:global(.svelte-flow__controls) {
+	bottom: 20px;
+	left: 20px;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:global(.svelte-flow__controls button) {
+	border-radius: 6px;
+	border: 1px solid #e5e7eb;
+	background: white;
+	color: #374151;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	transition: all 0.2s;
+}
+
+:global(.svelte-flow__controls button:hover) {
+	background: #f9fafb;
+	border-color: #d1d5db;
+}
+
+:global(.svelte-flow__minimap) {
+	bottom: 20px;
+	right: 20px;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:global(.svelte-flow__minimap svg) {
+	border-radius: 6px;
+}
+
+:global(.svelte-flow__background) {
+	background-color: #fafafa;
+	background-image:
+		radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+	background-size: 20px 20px;
+}
+
+/* Handle styles */
+:global(.svelte-flow__handle) {
+	width: 8px;
+	height: 8px;
+	border: 2px solid white;
+	background: #6b7280;
+	border-radius: 50%;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:global(.svelte-flow__handle:hover) {
+	background: #2563eb;
+}
+
+:global(.svelte-flow__handle-top) {
+	top: -4px;
+}
+
+:global(.svelte-flow__handle-bottom) {
+	bottom: -4px;
+}
+
+:global(.svelte-flow__handle-left) {
+	left: -4px;
+}
+
+:global(.svelte-flow__handle-right) {
+	right: -4px;
+}
