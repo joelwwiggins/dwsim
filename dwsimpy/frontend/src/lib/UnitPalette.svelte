@@ -9,9 +9,10 @@
 
 	interface Props {
 		unitTypes: UnitType[];
+		onAddStream?: () => void;
 	}
 
-	let { unitTypes }: Props = $props();
+	let { unitTypes, onAddStream }: Props = $props();
 
 	function onDragStart(event: DragEvent, unitType: UnitType) {
 		event.dataTransfer?.setData('application/unit-type', unitType.id);
@@ -22,6 +23,12 @@
 <div class="unit-palette">
 	<h3 class="palette-title">Unit Operations</h3>
 	<div class="unit-list">
+		{#if onAddStream}
+			<button class="add-stream-button" onclick={onAddStream}>
+				<span class="unit-icon">🌊</span>
+				<span class="unit-name">Add Stream</span>
+			</button>
+		{/if}
 		{#each unitTypes as unitType (unitType.id)}
 			<div
 				class="unit-item"
@@ -93,5 +100,27 @@
 		font-weight: 500;
 		color: #374151;
 		flex: 1;
+	}
+
+	.add-stream-button {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.375rem;
+		background: #f9fafb;
+		color: #374151;
+		cursor: pointer;
+		transition: all 0.2s;
+		width: 100%;
+		font-size: 0.875rem;
+		font-weight: 500;
+		margin-bottom: 1rem;
+	}
+
+	.add-stream-button:hover {
+		background: #f3f4f6;
+		border-color: #d1d5db;
 	}
 </style>

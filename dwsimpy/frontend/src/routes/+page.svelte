@@ -8,6 +8,14 @@
 	import ResultsPanel from '../lib/ResultsPanel.svelte';
 	import type { Node, Edge } from '@xyflow/svelte';
 
+	// Backend API configuration
+	let API_BASE = $state('http://localhost:8000/api');
+
+	// Set API base on mount (client-side only)
+	onMount(() => {
+		API_BASE = `http://${window.location.hostname}:8000/api`;
+	});
+
 	interface UnitData extends Record<string, unknown> {
 		label: string;
 		unitType: string;
@@ -97,7 +105,9 @@
 					id: streamId,
 					type: 'default',
 					position: streamPosition,
+					className: 'stream-node',
 					data: {
+						label: `🌊 ${streamId}`,
 						id: streamId,
 						name: `Stream ${streamId}`,
 						temperature: 298.15,
@@ -162,7 +172,7 @@
 		if (!filename) return;
 
 		// Send to backend
-		fetch(`http://localhost:8000/api/flowsheet/save?filename=${encodeURIComponent(filename)}`, {
+		fetch(`${API_BASE}/flowsheet/save?filename=${encodeURIComponent(filename)}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(flowsheetData)
@@ -184,7 +194,7 @@
 	async function loadFlowsheet() {
 		try {
 			// Get list of saved flowsheets
-			const listResponse = await fetch('http://localhost:8000/api/flowsheet/list');
+			const listResponse = await fetch(`${API_BASE}/flowsheet/list`);
 			const listData = await listResponse.json();
 			
 			if (listData.flowsheets.length === 0) {
@@ -197,7 +207,7 @@
 			if (!filename) return;
 
 			// Load the flowsheet
-			const loadResponse = await fetch(`http://localhost:8000/api/flowsheet/load/${encodeURIComponent(filename)}`);
+			const loadResponse = await fetch(`${API_BASE}/flowsheet/load/${encodeURIComponent(filename)}`);
 			if (!loadResponse.ok) {
 				throw new Error(`Failed to load flowsheet: ${loadResponse.statusText}`);
 			}
@@ -270,7 +280,7 @@
 			};
 
 			// Load flowsheet
-			const loadResponse = await fetch('http://localhost:8000/api/flowsheet/load', {
+			const loadResponse = await fetch(`${API_BASE}/flowsheet/load`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(flowsheetData)
@@ -281,7 +291,7 @@
 			}
 
 			// Run simulation
-			const runResponse = await fetch('http://localhost:8000/api/simulation/run', {
+			const runResponse = await fetch(`${API_BASE}/simulation/run`, {
 				method: 'POST'
 			});
 
@@ -329,8 +339,9 @@
 			id: `${unitType}_${Date.now()}`,
 			type: 'default',
 			position,
+			className: 'unit-node',
 			data: {
-				label: unitTypeData.name,
+				label: `${unitTypeData.icon} ${unitTypeData.name}`,
 				unitType,
 				icon: unitTypeData.icon,
 				properties: {}
@@ -342,6 +353,27 @@
 
 	function toggleResultsPanel() {
 		showResultsPanel = !showResultsPanel;
+	}
+
+	function addStream() {
+		const streamId = `stream_${Date.now()}`;
+		const streamNode: Node<StreamData> = {
+			id: streamId,
+			type: 'default',
+			position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+			className: 'stream-node',
+			data: {
+				label: `🌊 ${streamId}`,
+				id: streamId,
+				name: `Stream ${streamId}`,
+				temperature: 298.15,
+				pressure: 101325,
+				mass_flow_rate: 1.0,
+				composition: { water: 1.0 }
+			}
+		};
+
+		nodes = [...nodes, streamNode];
 	}
 </script>
 
@@ -356,7 +388,7 @@
 	/>
 
 	<div class="main-content">
-		<UnitPalette {unitTypes} />
+		<UnitPalette {unitTypes} onAddStream={addStream} />
 
 		<div class="flow-container" ondragover={ondragover} ondrop={ondrop} role="application">
 			<SvelteFlow
@@ -418,6 +450,26 @@
 	:global(.svelte-flow__node.selected) {
 		border-color: #2563eb;
 		box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+	}
+
+	/* Style for unit operation nodes */
+	:global(.unit-node) {
+		background: #f8fafc;
+		border-color: #2563eb;
+		min-height: 60px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Style for stream nodes */
+	:global(.stream-node) {
+		background: #fef3c7;
+		border-color: #f59e0b;
+		border-style: dashed;
+		min-height: 40px;
+		font-size: 0.875rem;
 	}
 
 	:global(.svelte-flow__edge.selected) {
