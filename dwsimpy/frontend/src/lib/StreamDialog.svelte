@@ -85,8 +85,8 @@
 </script>
 
 {#if isOpen && stream}
-	<div class="dialog-overlay" onclick={onClose} onkeydown={(e) => { if (e.key === 'Escape') onClose(); }} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-		<div class="dialog" onclick={(e) => e.stopPropagation()}>
+	<div class="dialog-overlay" onclick={onClose} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') { e.preventDefault(); onClose(); } }} role="button" tabindex="0" aria-label="Close dialog">
+		<div class="dialog" onclick={(e) => e.stopPropagation()} tabindex="-1">
 			<div class="dialog-header">
 				<h3 id="dialog-title">Edit Stream Properties</h3>
 				<button class="close-button" onclick={onClose} aria-label="Close dialog">×</button>

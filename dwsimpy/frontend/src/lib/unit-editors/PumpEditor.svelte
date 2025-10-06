@@ -63,8 +63,8 @@
 </script>
 
 {#if isOpen && editedUnit}
-	<div class="modal-overlay" onclick={onClose}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-overlay" onclick={onClose} role="button" tabindex="0" onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
 			<div class="modal-header">
 				<h2>Pump Properties</h2>
 				<button class="close-button" onclick={onClose}>×</button>
@@ -206,19 +206,19 @@
 					<h3>Performance Parameters</h3>
 					<div class="info-grid">
 						<div class="info-item">
-							<label>Head:</label>
+							<span>Head:</span>
 							<span>-- m</span>
 						</div>
 						<div class="info-item">
-							<label>Flow Rate:</label>
+							<span>Flow Rate:</span>
 							<span>-- m³/h</span>
 						</div>
 						<div class="info-item">
-							<label>NPSH Required:</label>
+							<span>NPSH Required:</span>
 							<span>-- m</span>
 						</div>
 						<div class="info-item">
-							<label>NPSH Available:</label>
+							<span>NPSH Available:</span>
 							<span>-- m</span>
 						</div>
 					</div>
@@ -229,19 +229,19 @@
 					<h3>Design Parameters</h3>
 					<div class="info-grid">
 						<div class="info-item">
-							<label>Pump Type:</label>
+							<span>Pump Type:</span>
 							<span>Centrifugal</span>
 						</div>
 						<div class="info-item">
-							<label>Impeller Diameter:</label>
+							<span>Impeller Diameter:</span>
 							<span>-- mm</span>
 						</div>
 						<div class="info-item">
-							<label>Speed:</label>
+							<span>Speed:</span>
 							<span>-- RPM</span>
 						</div>
 						<div class="info-item">
-							<label>Stages:</label>
+							<span>Stages:</span>
 							<span>1</span>
 						</div>
 					</div>
@@ -252,15 +252,15 @@
 					<h3>Connections</h3>
 					<div class="connections-grid">
 						<div class="connection-item">
-							<label>Inlet Stream:</label>
+							<span>Inlet Stream:</span>
 							<span class="connection-status connected">Connected</span>
 						</div>
 						<div class="connection-item">
-							<label>Outlet Stream:</label>
+							<span>Outlet Stream:</span>
 							<span class="connection-status connected">Connected</span>
 						</div>
 						<div class="connection-item">
-							<label>Energy Stream:</label>
+							<span>Energy Stream:</span>
 							<span class="connection-status not-connected">Not Connected</span>
 						</div>
 					</div>
@@ -439,11 +439,6 @@
 		border-radius: 4px;
 	}
 
-	.info-item label {
-		font-weight: 500;
-		color: #374151;
-	}
-
 	.info-item span {
 		color: #6b7280;
 		font-family: monospace;
@@ -463,11 +458,6 @@
 		background: #f9fafb;
 		border: 1px solid #e5e7eb;
 		border-radius: 4px;
-	}
-
-	.connection-item label {
-		font-weight: 500;
-		color: #374151;
 	}
 
 	.connection-status {

@@ -63,8 +63,8 @@
 </script>
 
 {#if isOpen && editedUnit}
-	<div class="modal-overlay" onclick={onClose}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-overlay" onclick={onClose} role="button" tabindex="0" onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
 			<div class="modal-header">
 				<h2>Valve Properties</h2>
 				<button class="close-button" onclick={onClose}>×</button>
@@ -214,19 +214,19 @@
 					<h3>Valve Characteristics</h3>
 					<div class="info-grid">
 						<div class="info-item">
-							<label>Cv Value:</label>
+							<span>Cv Value:</span>
 							<span>--</span>
 						</div>
 						<div class="info-item">
-							<label>Flow Coefficient:</label>
+							<span>Flow Coefficient:</span>
 							<span>-- m³/h</span>
 						</div>
 						<div class="info-item">
-							<label>Pressure Recovery:</label>
+							<span>Pressure Recovery:</span>
 							<span>-- %</span>
 						</div>
 						<div class="info-item">
-							<label>Critical Pressure Ratio:</label>
+							<span>Critical Pressure Ratio:</span>
 							<span>--</span>
 						</div>
 					</div>
@@ -237,19 +237,19 @@
 					<h3>Design Parameters</h3>
 					<div class="info-grid">
 						<div class="info-item">
-							<label>Nominal Size:</label>
+							<span>Nominal Size:</span>
 							<span>-- mm</span>
 						</div>
 						<div class="info-item">
-							<label>Rating:</label>
+							<span>Rating:</span>
 							<span>-- bar</span>
 						</div>
 						<div class="info-item">
-							<label>Material:</label>
+							<span>Material:</span>
 							<span>Carbon Steel</span>
 						</div>
 						<div class="info-item">
-							<label>Actuator Type:</label>
+							<span>Actuator Type:</span>
 							<span>Manual</span>
 						</div>
 					</div>
@@ -260,11 +260,11 @@
 					<h3>Connections</h3>
 					<div class="connections-grid">
 						<div class="connection-item">
-							<label>Inlet Stream:</label>
+							<span>Inlet Stream:</span>
 							<span class="connection-status connected">Connected</span>
 						</div>
 						<div class="connection-item">
-							<label>Outlet Stream:</label>
+							<span>Outlet Stream:</span>
 							<span class="connection-status connected">Connected</span>
 						</div>
 					</div>
@@ -443,11 +443,6 @@
 		border-radius: 4px;
 	}
 
-	.info-item label {
-		font-weight: 500;
-		color: #374151;
-	}
-
 	.info-item span {
 		color: #6b7280;
 		font-family: monospace;
@@ -469,11 +464,6 @@
 		border-radius: 4px;
 	}
 
-	.connection-item label {
-		font-weight: 500;
-		color: #374151;
-	}
-
 	.connection-status {
 		font-size: 12px;
 		font-weight: 600;
@@ -488,6 +478,7 @@
 	}
 
 	.connection-status.not-connected {
+		/* Intentionally unused - no energy stream connection in valves */
 		background: #fee2e2;
 		color: #991b1b;
 	}

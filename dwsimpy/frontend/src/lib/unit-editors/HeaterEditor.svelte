@@ -69,8 +69,8 @@
 </script>
 
 {#if isOpen && editedUnit}
-	<div class="modal-overlay" onclick={onClose}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-overlay" onclick={onClose} role="button" tabindex="0" onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
 			<div class="modal-header">
 				<h2>Heater Properties</h2>
 				<button class="close-button" onclick={onClose}>×</button>
@@ -203,19 +203,19 @@
 					<h3>Design Parameters</h3>
 					<div class="info-grid">
 						<div class="info-item">
-							<label>Heat Transfer Area:</label>
+							<span>Heat Transfer Area:</span>
 							<span>-- m²</span>
 						</div>
 						<div class="info-item">
-							<label>Overall HTC:</label>
+							<span>Overall HTC:</span>
 							<span>-- W/m²·K</span>
 						</div>
 						<div class="info-item">
-							<label>LMTD:</label>
+							<span>LMTD:</span>
 							<span>-- °C</span>
 						</div>
 						<div class="info-item">
-							<label>Fouling Factor:</label>
+							<span>Fouling Factor:</span>
 							<span>-- m²·K/W</span>
 						</div>
 					</div>
@@ -226,15 +226,15 @@
 					<h3>Connections</h3>
 					<div class="connections-grid">
 						<div class="connection-item">
-							<label>Inlet Stream:</label>
+							<span>Inlet Stream:</span>
 							<span class="connection-status connected">Connected</span>
 						</div>
 						<div class="connection-item">
-							<label>Outlet Stream:</label>
+							<span>Outlet Stream:</span>
 							<span class="connection-status connected">Connected</span>
 						</div>
 						<div class="connection-item">
-							<label>Energy Stream:</label>
+							<span>Energy Stream:</span>
 							<span class="connection-status not-connected">Not Connected</span>
 						</div>
 					</div>
@@ -413,11 +413,6 @@
 		border-radius: 4px;
 	}
 
-	.info-item label {
-		font-weight: 500;
-		color: #374151;
-	}
-
 	.info-item span {
 		color: #6b7280;
 		font-family: monospace;
@@ -437,11 +432,6 @@
 		background: #f9fafb;
 		border: 1px solid #e5e7eb;
 		border-radius: 4px;
-	}
-
-	.connection-item label {
-		font-weight: 500;
-		color: #374151;
 	}
 
 	.connection-status {

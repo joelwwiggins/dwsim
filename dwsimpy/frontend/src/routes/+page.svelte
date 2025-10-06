@@ -584,7 +584,7 @@
 				<p>Material streams management interface would go here.</p>
 				<div class="streams-list">
 					{#each nodes.filter(node => !node.data.unitType) as stream}
-						<div class="stream-item" onclick={() => openStreamDialog(stream)}>
+						<div class="stream-item" onclick={() => openStreamDialog(stream)} role="button" tabindex="0" onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStreamDialog(stream); } }} aria-label="Edit stream {stream.data.name || stream.id}">
 							<strong>{stream.data.name || stream.id}</strong>
 							<span>T: {stream.data.temperature?.toFixed(1)} K</span>
 							<span>P: {stream.data.pressure?.toFixed(0)} Pa</span>
