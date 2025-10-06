@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Node } from 'svelte-flow';
+	import type { Node } from '@xyflow/svelte';
 
 	interface StreamData extends Record<string, unknown> {
 		id: string;

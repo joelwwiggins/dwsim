@@ -105,7 +105,7 @@
 					id: streamId,
 					type: 'default',
 					position: streamPosition,
-					className: 'stream-node',
+					class: 'stream-node',
 					data: {
 						label: `🌊 ${streamId}`,
 						id: streamId,
@@ -253,7 +253,7 @@
 			
 		} catch (error) {
 			console.error('Load error:', error);
-			alert(`Failed to load flowsheet: ${error.message}`);
+			alert(`Failed to load flowsheet: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 
@@ -339,7 +339,7 @@
 			id: `${unitType}_${Date.now()}`,
 			type: 'default',
 			position,
-			className: 'unit-node',
+			class: 'unit-node',
 			data: {
 				label: `${unitTypeData.icon} ${unitTypeData.name}`,
 				unitType,
@@ -361,7 +361,7 @@
 			id: streamId,
 			type: 'default',
 			position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-			className: 'stream-node',
+			class: 'stream-node',
 			data: {
 				label: `🌊 ${streamId}`,
 				id: streamId,

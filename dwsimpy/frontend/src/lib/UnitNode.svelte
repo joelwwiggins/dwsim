@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { NodeProps } from 'svelte-flow';
+	import type { NodeProps } from '@xyflow/svelte';
 
 	interface UnitData {
 		label: string;
@@ -8,9 +8,7 @@
 		properties: Record<string, any>;
 	}
 
-	type Props = NodeProps<UnitData>;
-
-	let { data, selected }: Props = $props();
+	let { data, selected }: { data: UnitData; selected?: boolean } = $props();
 </script>
 
 <div class="unit-node" class:selected>

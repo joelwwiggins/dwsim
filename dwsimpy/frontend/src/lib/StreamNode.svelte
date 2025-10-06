@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { NodeProps } from 'svelte-flow';
+	import type { NodeProps } from '@xyflow/svelte';
 
 	interface StreamData {
 		id: string;
@@ -10,9 +10,7 @@
 		composition?: Record<string, number>;
 	}
 
-	type Props = NodeProps<StreamData>;
-
-	let { data, selected }: Props = $props();
+	let { data, selected }: { data: StreamData; selected?: boolean } = $props();
 </script>
 
 <div class="stream-node" class:selected>
