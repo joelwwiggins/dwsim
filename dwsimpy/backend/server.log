@@ -1,0 +1,13 @@
+INFO:     Started server process [890864]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Flowsheet solver and property package initialized successfully
+Starting DWSIM Python API server...
+INFO:     127.0.0.1:52040 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     172.17.0.3:60630 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     172.17.0.3:42442 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [890864]

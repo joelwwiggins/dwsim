@@ -4,9 +4,13 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import sys
 import os
+import json
+from pathlib import Path
 
 # Add the dwsimpy package to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+dwsimpy_path = os.path.join(os.path.dirname(__file__), '..', '..')
+sys.path.insert(0, dwsimpy_path)
+os.environ['PYTHONPATH'] = dwsimpy_path
 
 from dwsimpy.flowsheet_solver import FlowsheetSolver
 from dwsimpy.unit_operations.mixer import Mixer
@@ -37,7 +41,7 @@ app = FastAPI(title="DWSIM Python API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Svelte dev server
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://172.17.0.3:5173", "http://172.17.0.3:5174"],  # Svelte dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,8 +81,14 @@ try:
     print("Flowsheet solver and property package initialized successfully")
 except Exception as e:
     print(f"Error initializing flowsheet solver: {e}")
+    import traceback
+    traceback.print_exc()
     flowsheet_solver = None
     property_package = None
+
+# Ensure the flowsheet storage directory exists
+FLOWsheet_STORAGE_DIR = Path(__file__).parent / "flowsheets"
+FLOWsheet_STORAGE_DIR.mkdir(exist_ok=True)
 
 @app.post("/api/flowsheet/load", response_model=SimulationResult)
 async def load_flowsheet(data: FlowsheetData):
@@ -190,6 +200,51 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "version": "1.0.0"}
 
+@app.post("/api/flowsheet/save")
+async def save_flowsheet(data: FlowsheetData, filename: str = "default"):
+    """Save a flowsheet to storage"""
+    try:
+        file_path = FLOWsheet_STORAGE_DIR / f"{filename}.json"
+        
+        with open(file_path, 'w') as f:
+            json.dump(data.dict(), f, indent=2)
+        
+        return SimulationResult(
+            success=True,
+            message=f"Flowsheet saved as {filename}.json"
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save flowsheet: {str(e)}")
+
+@app.get("/api/flowsheet/load/{filename}")
+async def load_saved_flowsheet(filename: str):
+    """Load a flowsheet from storage"""
+    try:
+        file_path = FLOWsheet_STORAGE_DIR / f"{filename}.json"
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Flowsheet {filename} not found")
+        
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        return data
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load flowsheet: {str(e)}")
+
+@app.get("/api/flowsheet/list")
+async def list_saved_flowsheets():
+    """List all saved flowsheets"""
+    try:
+        files = [f.stem for f in FLOWsheet_STORAGE_DIR.glob("*.json")]
+        return {"flowsheets": files}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list flowsheets: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("Starting DWSIM Python API server...")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
