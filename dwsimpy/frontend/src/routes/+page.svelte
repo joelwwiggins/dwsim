@@ -5,7 +5,7 @@
 	import PropertyPanel from '../lib/PropertyPanel.svelte';
 	import StreamDialog from '../lib/StreamDialog.svelte';
 	import ResultsPanel from '../lib/ResultsPanel.svelte';
-	import { HeaterEditor, PumpEditor, ValveEditor, type HeaterData, type PumpData, type ValveData } from '../lib/unit-editors';
+	import { HeaterEditor, PumpEditor, ValveEditor, HeatExchangerEditor, PipeEditor, EquilibriumReactorEditor, ConversionReactorEditor, DistillationColumnEditor, type HeaterData, type PumpData, type ValveData, type DistillationColumnData, type ConversionReactorData, type EquilibriumReactorData, type HeatExchangerData } from '../lib/unit-editors';
 	import type { Node, Edge } from '@xyflow/svelte';
 
 	// Backend API configuration
@@ -44,7 +44,12 @@
 	let showHeaterEditor: boolean = $state(false);
 	let showPumpEditor: boolean = $state(false);
 	let showValveEditor: boolean = $state(false);
-	let selectedUnitData: HeaterData | PumpData | ValveData | null = $state(null);
+	let showDistillationColumnEditor: boolean = $state(false);
+	let showConversionReactorEditor: boolean = $state(false);
+	let showEquilibriumReactorEditor: boolean = $state(false);
+	let showHeatExchangerEditor: boolean = $state(false);
+	let showPipeEditor: boolean = $state(false);
+	let selectedUnitData: HeaterData | PumpData | ValveData | DistillationColumnData | ConversionReactorData | EquilibriumReactorData | HeatExchangerData | null = $state(null);
 
 	// Active tab state
 	let activeTab = $state('Flowsheet');
@@ -60,7 +65,13 @@
 		{ id: 'tank', name: 'Tank', icon: '🛢️' },
 		{ id: 'compressor', name: 'Compressor', icon: '🗜️' },
 		{ id: 'expander', name: 'Expander', icon: '📈' },
+		{ id: 'pipe', name: 'Pipe', icon: '📏' },
 		{ id: 'heat_exchanger', name: 'Heat Exchanger', icon: '🔄' },
+		{ id: 'pipe', name: 'Pipe', icon: '📏' },
+		{ id: 'heat_exchanger', name: 'Heat Exchanger', icon: '🔄' },
+		{ id: 'equilibrium_reactor', name: 'Equilibrium Reactor', icon: '⚗️' },
+		{ id: 'conversion_reactor', name: 'Conversion Reactor', icon: '⚗️' },
+		{ id: 'distillation_column', name: 'Distillation Column', icon: '🏭' },
 		{ id: 'pipe', name: 'Pipe', icon: '📏' },
 		{ id: 'vessel', name: 'Vessel', icon: '🏭' },
 		{ id: 'component_separator', name: 'Component Separator', icon: '⚗️' },
@@ -199,6 +210,56 @@
 			}
 		}
 		showValveEditor = false;
+	}
+	function saveDistillationColumnData(unitData: DistillationColumnData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+				nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showDistillationColumnEditor = false;
+	function saveConversionReactorData(unitData: ConversionReactorData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+	function saveEquilibriumReactorData(unitData: EquilibriumReactorData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+			node.data = { ...node.data, ...unitData };
+	function saveHeatExchangerData(unitData: HeatExchangerData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+			node.data = { ...node.data, ...unitData };
+	function savePipeData(unitData: PipeData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+			node.data = { ...node.data, ...unitData };
+			nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showPipeEditor = false;
+	}
+			nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showHeatExchangerEditor = false;
+	}
+			nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showEquilibriumReactorEditor = false;
+	}
+				nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showConversionReactorEditor = false;
+	}
 	}
 
 	// Toolbar actions
@@ -647,7 +708,37 @@
 	onSave={savePumpData}
 />
 
-<ValveEditor
+</ValveEditor>
+
+<HeatExchangerEditor
+	unit={selectedUnitData as HeatExchangerData}
+	isOpen={showHeatExchangerEditor}
+	onClose={() => showHeatExchangerEditor = false}
+	onSave={saveHeatExchangerData}
+/>
+
+<EquilibriumReactorEditor
+	unit={selectedUnitData as EquilibriumReactorData}
+	isOpen={showEquilibriumReactorEditor}
+	onClose={() => showEquilibriumReactorEditor = false}
+	onSave={saveEquilibriumReactorData}
+/>
+
+<ConversionReactorEditor
+	unit={selectedUnitData as ConversionReactorData}
+	isOpen={showConversionReactorEditor}
+	onClose={() => showConversionReactorEditor = false}
+	onSave={saveConversionReactorData}
+/>
+
+<DistillationColumnEditor
+	unit={selectedUnitData as DistillationColumnData}
+	isOpen={showDistillationColumnEditor}
+	onClose={() => showDistillationColumnEditor = false}
+	onSave={saveDistillationColumnData}
+/>
+
+<style>
 	unit={selectedUnitData as ValveData}
 	isOpen={showValveEditor}
 	onClose={() => showValveEditor = false}

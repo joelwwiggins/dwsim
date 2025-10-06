@@ -41,6 +41,16 @@
 				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 10 L30 10 M10 15 L30 15 M10 20 L30 20 M10 25 L30 25 M10 30 L30 30" stroke="#374151" stroke-width="1"/></svg>`;
 			case 'cooler':
 				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 10 L30 30" stroke="#374151" stroke-width="2"/><path d="M30 10 L10 30" stroke="#374151" stroke-width="2"/><circle cx="15" cy="15" r="2" fill="#374151"/><circle cx="25" cy="25" r="2" fill="#374151"/></svg>`;
+			case 'pipe':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="15" width="30" height="10" fill="none" stroke="#374151" stroke-width="2" rx="5"/><path d="M8 20 L32 20" stroke="#374151" stroke-width="1"/><text x="20" y="35" text-anchor="middle" font-size="6" fill="#374151">PIPE</text></svg>`;
+			case 'heat_exchanger':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="30" height="20" fill="none" stroke="#374151" stroke-width="2" rx="3"/><path d="M10 15 L30 15 M10 25 L30 25" stroke="#374151" stroke-width="1"/><circle cx="15" cy="20" r="1.5" fill="#374151"/><circle cx="25" cy="20" r="1.5" fill="#374151"/><path d="M15 20 L25 20" stroke="#374151" stroke-width="2"/><text x="20" y="35" text-anchor="middle" font-size="6" fill="#374151">HX</text></svg>`;
+			case 'equilibrium_reactor':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="30" height="20" fill="none" stroke="#374151" stroke-width="2" rx="3"/><circle cx="12" cy="15" r="2" fill="#374151"/><circle cx="20" cy="15" r="2" fill="#374151"/><circle cx="28" cy="15" r="2" fill="#374151"/><path d="M15 20 L25 20" stroke="#374151" stroke-width="1"/><text x="20" y="35" text-anchor="middle" font-size="6" fill="#374151">EQ</text></svg>`;
+			case 'conversion_reactor':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10" width="30" height="20" fill="none" stroke="#374151" stroke-width="2" rx="3"/><path d="M10 15 L25 15 M10 20 L25 20 M10 25 L25 25" stroke="#374151" stroke-width="1"/><circle cx="30" cy="15" r="2" fill="#374151"/><path d="M28 15 L32 15" stroke="#374151" stroke-width="2"/><text x="20" y="35" text-anchor="middle" font-size="6" fill="#374151">RXN</text></svg>`;
+			case 'distillation_column':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="15" width="30" height="20" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 15 L35 15 M10 20 L35 20 M10 25 L35 25 M10 30 L35 30" stroke="#374151" stroke-width="1"/><circle cx="20" cy="10" r="3" fill="#374151"/><path d="M17 10 L23 10" stroke="#374151" stroke-width="2"/></svg>`;
 			default:
 				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><text x="20" y="24" text-anchor="middle" font-size="8" fill="#374151">?</text></svg>`;
 		}

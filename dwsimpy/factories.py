@@ -41,11 +41,17 @@ class UnitOperationFactory:
             "expander": "Expander unit operation",
             "heat_exchanger": "Heat exchanger unit operation",
             "pipe": "Pipe unit operation",
+            "pipe": "Pipe unit operation",
             "vessel": "Vessel unit operation",
             "component_separator": "Component separator unit operation",
             "filter": "Filter unit operation",
             "orifice_plate": "Orifice plate unit operation",
-            "relief_valve": "Relief valve unit operation"
+            "relief_valve": "Relief valve unit operation",
+            "distillation_column": "Distillation column unit operation",
+            "conversion_reactor": "Conversion reactor unit operation",
+            "equilibrium_reactor": "Equilibrium reactor unit operation",
+            "heat_exchanger": "Heat exchanger unit operation",
+            "pipe": "Pipe unit operation"
         }
 
 
@@ -143,5 +149,29 @@ except ImportError:
 try:
     from .unit_ops.relief_valve import ReliefValve
     UnitOperationFactory.register("relief_valve", ReliefValve)
+except ImportError:
+    passtry:
+    from .unit_operations.distillation_column import DistillationColumn
+    UnitOperationFactory.register("distillation_column", DistillationColumn)
+except ImportError:
+    pass
+try:
+    from .unit_operations.conversion_reactor import ConversionReactor
+    UnitOperationFactory.register("conversion_reactor", ConversionReactor)
+except ImportError:
+    pass
+try:
+    from .unit_operations.equilibrium_reactor import EquilibriumReactor
+    UnitOperationFactory.register("equilibrium_reactor", EquilibriumReactor)
+except ImportError:
+    pass
+try:
+    from .unit_operations.heat_exchanger import HeatExchanger
+    UnitOperationFactory.register("heat_exchanger", HeatExchanger)
+except ImportError:
+    pass
+try:
+    from .unit_operations.pipe import Pipe
+    UnitOperationFactory.register("pipe", Pipe)
 except ImportError:
     pass

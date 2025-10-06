@@ -72,6 +72,39 @@
 					{ id: 'in', type: 'target', position: Position.Left, style: 'top: 50%' },
 					{ id: 'out', type: 'source', position: Position.Right, style: 'top: 50%' }
 				);
+t		case 'pipe':
+				handles.push(
+					{ id: 'inlet', type: 'target', position: Position.Left, style: 'top: 50%' },
+					{ id: 'outlet', type: 'source', position: Position.Right, style: 'top: 50%' }
+				);
+				break;
+t		case 'heat_exchanger':
+				handles.push(
+					{ id: 'hot_in', type: 'target', position: Position.Left, style: 'top: 30%' },
+					{ id: 'cold_in', type: 'target', position: Position.Left, style: 'top: 70%' },
+					{ id: 'hot_out', type: 'source', position: Position.Right, style: 'top: 30%' },
+					{ id: 'cold_out', type: 'source', position: Position.Right, style: 'top: 70%' }
+				);
+				break;
+t		case 'equilibrium_reactor':
+				handles.push(
+					{ id: 'inlet', type: 'target', position: Position.Left, style: 'top: 50%' },
+					{ id: 'outlet', type: 'source', position: Position.Right, style: 'top: 50%' }
+				);
+				break;
+t		case 'conversion_reactor':
+				handles.push(
+					{ id: 'inlet', type: 'target', position: Position.Left, style: 'top: 50%' },
+					{ id: 'outlet', type: 'source', position: Position.Right, style: 'top: 50%' }
+				);
+				break;
+			case 'distillation_column':
+				handles.push(
+					{ id: 'feed', type: 'target', position: Position.Left, style: 'top: 60%' },
+					{ id: 'distillate', type: 'source', position: Position.Top, style: 'left: 50%' },
+					{ id: 'bottoms', type: 'source', position: Position.Bottom, style: 'left: 50%' }
+				);
+				break;
 				break;
 			default:
 				// Default handles for other units
@@ -120,6 +153,13 @@
 				return `
 					<rect x="15" y="25" width="50" height="30" fill="none" stroke="#2563eb" stroke-width="3" rx="3"/>
 					<path d="M20 35 L25 30 M25 30 L30 35 M30 35 L35 30 M35 30 L40 35 M40 35 L45 30 M45 30 L50 35 M50 35 L55 30" stroke="#2563eb" stroke-width="2"/>
+			case 'pipe':
+				return `
+					<rect x="15" y="18" width="50" height="14" fill="none" stroke="#2563eb" stroke-width="3" rx="7"/>
+					<path d="M18 25 L62 25" stroke="#2563eb" stroke-width="1"/>
+					<text x="40" y="52" text-anchor="middle" font-size="8" fill="#2563eb">PIPE</text>
+				`;
+				break;
 				`;
 			case 'valve':
 				return `
@@ -128,20 +168,56 @@
 				`;
 			case 'heat_exchanger':
 				return `
+			case 'heat_exchanger':
+				return `
+					<rect x="15" y="20" width="50" height="30" fill="none" stroke="#2563eb" stroke-width="3" rx="5"/>
+					<path d="M20 25 L60 25 M20 35 L60 35" stroke="#2563eb" stroke-width="1"/>
+					<circle cx="30" cy="30" r="2" fill="#2563eb"/>
+					<circle cx="50" cy="30" r="2" fill="#2563eb"/>
+					<path d="M30 30 L50 30" stroke="#2563eb" stroke-width="2"/>
+					<text x="40" y="52" text-anchor="middle" font-size="8" fill="#2563eb">HX</text>
+				`;
+				break;
 					<rect x="15" y="15" width="50" height="50" fill="none" stroke="#2563eb" stroke-width="3"/>
 					<path d="M15 25 L65 25 M15 35 L65 35 M15 45 L65 45 M15 55 L65 55" stroke="#2563eb" stroke-width="2"/>
 				`;
 			case 'tank':
 				return `
 					<path d="M15 20 L65 20 L65 60 L15 60 Z" fill="none" stroke="#2563eb" stroke-width="3"/>
+			case 'equilibrium_reactor':
+				return `
+					<rect x="15" y="20" width="50" height="30" fill="none" stroke="#2563eb" stroke-width="3" rx="5"/>
+					<circle cx="25" cy="25" r="3" fill="#2563eb"/>
+					<circle cx="35" cy="25" r="3" fill="#2563eb"/>
+					<circle cx="45" cy="25" r="3" fill="#2563eb"/>
+					<path d="M30 30 L40 30" stroke="#2563eb" stroke-width="1"/>
+					<text x="40" y="52" text-anchor="middle" font-size="8" fill="#2563eb">EQ</text>
+				`;
+				break;
 					<ellipse cx="40" cy="20" rx="25" ry="8" fill="none" stroke="#2563eb" stroke-width="3"/>
 					<ellipse cx="40" cy="60" rx="25" ry="8" fill="none" stroke="#2563eb" stroke-width="3"/>
 				`;
 			case 'vessel':
 				return `
 					<ellipse cx="40" cy="25" rx="25" ry="15" fill="none" stroke="#2563eb" stroke-width="3"/>
+			case 'conversion_reactor':
+				return `
+					<rect x="15" y="20" width="50" height="30" fill="none" stroke="#2563eb" stroke-width="3" rx="5"/>
+					<path d="M20 25 L45 25 M20 30 L45 30 M20 35 L45 35 M20 40 L45 40" stroke="#2563eb" stroke-width="1"/>
+					<circle cx="50" cy="25" r="3" fill="#2563eb"/>
+					<path d="M47 25 L53 25" stroke="#2563eb" stroke-width="2"/>
+					<text x="40" y="52" text-anchor="middle" font-size="8" fill="#2563eb">RXN</text>
+				`;
+				break;
 					<rect x="15" y="25" width="50" height="30" fill="none" stroke="#2563eb" stroke-width="3"/>
 					<ellipse cx="40" cy="55" rx="25" ry="15" fill="none" stroke="#2563eb" stroke-width="3"/>
+			case 'distillation_column':
+				return `
+					<rect x="15" y="25" width="50" height="30" fill="none" stroke="#2563eb" stroke-width="3"/>
+					<path d="M15 30 L65 30 M15 35 L65 35 M15 40 L65 40 M15 45 L65 45 M15 50 L65 50" stroke="#2563eb" stroke-width="1"/>
+					<circle cx="40" cy="15" r="5" fill="#2563eb"/>
+					<path d="M35 15 L45 15" stroke="#2563eb" stroke-width="2"/>
+				`;
 				`;
 			case 'pipe':
 				return `
