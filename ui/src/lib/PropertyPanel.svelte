@@ -1,34 +1,42 @@
 <script>
   import { createEventDispatcher } from 'svelte'
-  export let selectedNode = null
-  export let selectedEdge = null
-  export let flowsheetData = null
+  
+  let { selectedNode = null, selectedEdge = null, flowsheetData = null } = $props()
 
   const dispatch = createEventDispatcher()
 
-  let properties = {}
-  let streamProperties = {}
+  let properties = $state({})
+  let streamProperties = $state({})
 
-  $: if (selectedNode) {
-    // Initialize properties based on node type
-    properties = getDefaultProperties(selectedNode.data.type)
-  }
-
-  $: if (selectedEdge) {
-    // Initialize stream properties from flowsheet data
-    streamProperties = getDefaultStreamProperties()
-    // Try to find existing stream data
-    const streamData = findStreamData(selectedEdge.id)
-    if (streamData) {
-      streamProperties = { ...streamProperties, ...streamData }
+  $effect(() => {
+    if (selectedNode) {
+      // Initialize properties based on node type
+      properties = getDefaultProperties(selectedNode.data.type)
     }
-  }
+  })
+
+  $effect(() => {
+    if (selectedEdge) {
+      // Initialize stream properties from flowsheet data
+      streamProperties = getDefaultStreamProperties()
+      // Try to find existing stream data
+      const streamData = findStreamData(selectedEdge.id)
+      if (streamData) {
+        streamProperties = { ...streamProperties, ...streamData }
+      }
+    }
+  })
+
+  // Create a derived value for composition string
+  let compositionString = $derived(streamProperties.composition ? JSON.stringify(streamProperties.composition, null, 2) : '{}')
 
   function findStreamData(edgeId) {
     if (flowsheetData && flowsheetData.streams) {
       return flowsheetData.streams.find(stream => stream.id === edgeId)
     }
     return null
+  }
+  
   function getDefaultProperties(type) {
     const defaults = {
       mixer: {
@@ -79,7 +87,7 @@
         pressure: 101325
       },
       component_separator: {
-        splitRatio: 0.5
+        efficiency: 0.95
       },
       filter: {
         pressureDrop: 0
@@ -99,6 +107,9 @@
       temperature: 298.15,
       pressure: 101325,
       massFlowRate: 0.0,
+    }
+  }
+  
   function updateProperty(key, value) {
     properties[key] = value
     // Dispatch event to update node data
@@ -110,10 +121,10 @@
     // Dispatch event to update stream data
     dispatch('updateStream', { streamId: selectedEdge.id, key, value })
   }
+</script>
 
-  function updateStreamProperty(key, value) {
-    streamProperties[key] = value
-  <h3>Properties</h3>
+<div class="property-panel">
+<h3>Properties</h3>
   {#if selectedEdge}
     <div class="properties">
       <div class="property-group">
@@ -132,11 +143,11 @@
         </div>
         <div class="property-item">
           <label>Composition (JSON):</label>
-          <textarea bind:value={JSON.stringify(streamProperties.composition)} on:input={() => {
+          <textarea bind:value={compositionString} on:input={(e) => {
             try {
-              streamProperties.composition = JSON.parse(event.target.value)
+              streamProperties.composition = JSON.parse(e.target.value)
               updateStreamProperty('composition', streamProperties.composition)
-            } catch (e) {
+            } catch (err) {
               // Invalid JSON, ignore
             }
           }}></textarea>
@@ -193,8 +204,8 @@
             <input
               id={key}
               type="number"
-              bind:value
-              on:input={() => updateProperty(key, value)}
+              bind:value={properties[key]}
+              on:input={() => updateProperty(key, properties[key])}
             />
           </div>
         {/each}

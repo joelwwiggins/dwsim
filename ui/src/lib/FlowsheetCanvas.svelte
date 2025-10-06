@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte'
   import {
-    SvelteFlow,
     Controls,
     Background,
     BackgroundVariant,
@@ -11,7 +10,7 @@
 
   const dispatch = createEventDispatcher()
 
-  export let flowsheetData = { nodes: [], edges: [] }
+  let { flowsheetData = { nodes: [], edges: [] } } = $props()
 
   let nodes = $state(flowsheetData.nodes)
   let edges = $state(flowsheetData.edges)
@@ -217,7 +216,12 @@
 </script>
 
 <div class="flowsheet-canvas" on:drop={onDrop} on:dragover={onDragOver}>
-  <SvelteFlow
+  <!-- Temporarily disabled SvelteFlow for testing -->
+  <div style="padding: 20px; background: #f0f0f0; border: 1px solid #ccc;">
+    <h3>Flowsheet Canvas</h3>
+    <p>Canvas temporarily disabled for testing</p>
+  </div>
+  <!-- <SvelteFlow
     {nodes}
     {edges}
     {nodeTypes}
@@ -232,7 +236,7 @@
     <Controls />
     <Background variant={BackgroundVariant.Dots} />
     <MiniMap />
-  </SvelteFlow>
+  </SvelteFlow> -->
 </div>
 
 <style>

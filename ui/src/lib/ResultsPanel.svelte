@@ -1,5 +1,5 @@
 <script>
-  export let results = null
+  let { results = null } = $props()
 </script>
 
 <div class="results-panel">

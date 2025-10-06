@@ -1,8 +1,7 @@
 <script>
   import { Handle, Position } from '@xyflow/svelte'
 
-  export let data
-  export let selected = false
+  let { data, selected = false } = $props()
 </script>
 
 <div class="unit-node" class:selected>
