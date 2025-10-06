@@ -1,6 +1,10 @@
 <script>
+  import { createEventDispatcher } from 'svelte'
   export let selectedNode = null
   export let selectedEdge = null
+  export let flowsheetData = null
+
+  const dispatch = createEventDispatcher()
 
   let properties = {}
   let streamProperties = {}
@@ -11,10 +15,20 @@
   }
 
   $: if (selectedEdge) {
-    // Initialize stream properties
+    // Initialize stream properties from flowsheet data
     streamProperties = getDefaultStreamProperties()
+    // Try to find existing stream data
+    const streamData = findStreamData(selectedEdge.id)
+    if (streamData) {
+      streamProperties = { ...streamProperties, ...streamData }
+    }
   }
 
+  function findStreamData(edgeId) {
+    if (flowsheetData && flowsheetData.streams) {
+      return flowsheetData.streams.find(stream => stream.id === edgeId)
+    }
+    return null
   function getDefaultProperties(type) {
     const defaults = {
       mixer: {
@@ -85,22 +99,20 @@
       temperature: 298.15,
       pressure: 101325,
       massFlowRate: 0.0,
-      composition: {}
-    }
-  }
-
   function updateProperty(key, value) {
     properties[key] = value
-    // Here we would update the node data and notify the backend
+    // Dispatch event to update node data
+    dispatch('updateNode', { nodeId: selectedNode.id, key, value })
   }
 
   function updateStreamProperty(key, value) {
     streamProperties[key] = value
-    // TODO: Update the flowsheet data and notify backend
+    // Dispatch event to update stream data
+    dispatch('updateStream', { streamId: selectedEdge.id, key, value })
   }
-</script>
 
-<div class="property-panel">
+  function updateStreamProperty(key, value) {
+    streamProperties[key] = value
   <h3>Properties</h3>
   {#if selectedEdge}
     <div class="properties">

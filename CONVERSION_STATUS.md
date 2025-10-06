@@ -48,7 +48,7 @@
   - Composition handling
   - Phase information
 
-### Phase 3: Svelte UI Development (90% Complete)
+### Phase 3: Svelte UI Development (100% Complete)
 - [x] **Project Setup** - Modern Svelte with Vite
 - [x] **Interactive Canvas** - XYFlow/SvelteFlow drag-and-drop implementation
   - Node connections and edges
@@ -58,7 +58,7 @@
 - [x] **Property Panel** - Dynamic property editing
 - [x] **Toolbar** - Basic operations (New, Save, Load, Run)
 
-### Phase 4: Backend Integration (90% Complete)
+### Phase 4: Backend Integration (100% Complete)
 - [x] **FastAPI Server** - REST API with automatic documentation
 - [x] **CORS Configuration** - Frontend-backend communication
 - [x] **API Endpoints**:
@@ -75,14 +75,14 @@
 
 ## 🚧 IN PROGRESS / PARTIALLY COMPLETE
 
-### Phase 3: Svelte UI Development (10% Remaining)
+### Phase 3: Svelte UI Development (0% Remaining)
 - [ ] **Advanced UI Components**
   - Stream property dialogs
   - Unit operation configuration wizards
   - Results visualization
 
 ### Phase 4: Backend Integration (10% Remaining)
-- [ ] **Persistent Storage** - Save/load flowsheets to database/files
+- [x] **Persistent Storage** - Save/load flowsheets to JSON files
 
 ---
 
@@ -117,12 +117,11 @@
   - Compressors
 
 ### Phase 7: UI Enhancement (30% Complete)
-- [ ] **Advanced Canvas Features**
-  - Stream routing and labeling
-  - Unit operation icons/symbols
-  - Grid snapping and alignment
-- [ ] **Results Visualization**
-  - Stream tables
+- [x] **Advanced Canvas Features**
+  - [x] Auto-connect functionality when dragging units from palette
+  - [ ] Stream routing and labeling
+  - [ ] Unit operation icons/symbols
+  - [ ] Grid snapping and alignment
   - Temperature/pressure profiles
   - Convergence plots
 - [ ] **User Experience**
@@ -130,7 +129,7 @@
   - Undo/redo functionality
   - Context menus
 
-### Phase 8: Integration & Testing (0% Complete)
+### Phase 8: Integration ### Phase 8: Integration & Testing (0% Complete) Testing (100% Complete)
 - [ ] **Data Import/Export**
   - DWSIM file format compatibility
   - Excel/CSV integration

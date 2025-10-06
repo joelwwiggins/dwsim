@@ -66,13 +66,82 @@
   function onDrop(event) {
     event.preventDefault()
     const type = event.dataTransfer.getData('unitType')
+    const rect = event.currentTarget.getBoundingClientRect()
     const position = {
-      x: event.clientX - event.currentTarget.getBoundingClientRect().left,
-      y: event.clientY - event.currentTarget.getBoundingClientRect().top
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
     }
     createNode(type, position)
+    // Auto-connect to nearby units after creating the node
+    autoConnectNode(nodes[nodes.length - 1])
   }
 
+  function autoConnectNode(newNode) {
+    const CONNECTION_THRESHOLD = 100 // pixels
+    const newNodeData = unitTypes[newNode.data.unitType]
+
+    // Check connections for each existing node
+    for (const existingNode of nodes) {
+      if (existingNode.id === newNode.id) continue
+
+      const distance = Math.sqrt(
+        Math.pow(newNode.position.x - existingNode.position.x, 2) +
+        Math.pow(newNode.position.y - existingNode.position.y, 2)
+      )
+
+      if (distance < CONNECTION_THRESHOLD) {
+        // Check if connection makes sense (output to input)
+        const existingData = unitTypes[existingNode.data.unitType]
+
+        // Simple auto-connection logic: connect if one has output and other has input
+        if (newNodeData.outputs > 0 && existingData.inputs > 0) {
+          // Connect new node output to existing node input
+          createAutoConnection(newNode.id, existingNode.id, 'output', 'input')
+        } else if (existingData.outputs > 0 && newNodeData.inputs > 0) {
+          // Connect existing node output to new node input
+          createAutoConnection(existingNode.id, newNode.id, 'output', 'input')
+        }
+      }
+    }
+  }
+
+  function createAutoConnection(sourceId, targetId, sourceHandle, targetHandle) {
+    const edgeId = `edge_${sourceId}_${targetId}_${Date.now()}`
+    const newEdge = {
+      id: edgeId,
+      source: sourceId,
+      target: targetId,
+      sourceHandle,
+      targetHandle,
+      type: 'default'
+    }
+
+    // Check if edge already exists
+    const edgeExists = edges.some(edge =>
+      edge.source === sourceId && edge.target === targetId
+    )
+
+    if (!edgeExists) {
+      edges = [...edges, newEdge]
+
+      // Add default stream data
+      const streamData = {
+        id: newEdge.id,
+        name: `Stream ${newEdge.id}`,
+        temperature: 298.15,
+        pressure: 101325,
+        mass_flow_rate: 0.0,
+        composition: {}
+      }
+
+      if (!flowsheetData.streams) {
+        flowsheetData.streams = []
+      }
+      flowsheetData.streams = [...flowsheetData.streams, streamData]
+
+      updateFlowsheet()
+    }
+  }
   function onDragOver(event) {
     event.preventDefault()
   }

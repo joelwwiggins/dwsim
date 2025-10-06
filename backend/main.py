@@ -168,6 +168,76 @@ async def get_unit_operations():
     """Get available unit operation types"""
     return UnitOperationFactory.get_available_types()
 
+@app.post("/api/flowsheet/save")
+async def save_flowsheet(data: FlowsheetData):
+    """Save a flowsheet to file"""
+    import json
+    import os
+    from datetime import datetime
+    
+    try:
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"flowsheet_{timestamp}.json"
+        filepath = os.path.join("backend/flowsheets", filename)
+        
+        # Save flowsheet data
+        with open(filepath, "w") as f:
+            json.dump(data.dict(), f, indent=2)
+        
+        return {"success": True, "message": "Flowsheet saved successfully", "filename": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save flowsheet: {str(e)}")
+
+@app.get("/api/flowsheet/list")
+async def list_flowsheets():
+    """List saved flowsheets"""
+    import os
+    import glob
+    
+    try:
+        pattern = "backend/flowsheets/*.json"
+        files = glob.glob(pattern)
+        flowsheets = []
+        
+        for file in files:
+            filename = os.path.basename(file)
+            # Get file modification time
+            mtime = os.path.getmtime(file)
+            from datetime import datetime
+            modified = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            
+            flowsheets.append({
+                "filename": filename,
+                "modified": modified
+            })
+        
+        return {"flowsheets": flowsheets}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list flowsheets: {str(e)}")
+
+@app.post("/api/flowsheet/load-file")
+async def load_flowsheet_file(filename: str):
+    """Load a specific flowsheet file"""
+    import json
+    import os
+    
+    try:
+        filepath = os.path.join("backend/flowsheets", filename)
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="Flowsheet file not found")
+        
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        
+        return {"success": True, "flowsheet": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load flowsheet: {str(e)}")
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "version": "1.0.0"}
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint"""

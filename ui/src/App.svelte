@@ -64,6 +64,26 @@
     selectedNode = null
   }
 
+  function handleUpdateNode(event) {
+    const { nodeId, key, value } = event.detail
+    // Update node data in flowsheet
+    const node = flowsheetData.nodes.find(n => n.id === nodeId)
+    if (node) {
+      node.data[key] = value
+      handleFlowsheetUpdate({ detail: flowsheetData })
+    }
+  }
+
+  function handleUpdateStream(event) {
+    const { streamId, key, value } = event.detail
+    // Update stream data in flowsheet
+    const stream = flowsheetData.streams.find(s => s.id === streamId)
+    if (stream) {
+      stream[key] = value
+      handleFlowsheetUpdate({ detail: flowsheetData })
+    }
+  }
+
   function handleFlowsheetUpdate(event) {
     flowsheetData = event.detail
     loadFlowsheet(flowsheetData)
@@ -75,16 +95,60 @@
     selectedEdge = null
   }
 
-  function handleSaveFlowsheet() {
-    // TODO: Implement save functionality
-    console.log('Save flowsheet:', flowsheetData)
+  async function handleSaveFlowsheet() {
+    try {
+      const response = await fetch(`${API_BASE}/flowsheet/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(flowsheetData)
+      })
+      const result = await response.json()
+      if (result.success) {
+        alert(`Flowsheet saved as ${result.filename}`)
+      } else {
+        alert(`Save failed: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Failed to save flowsheet:', error)
+      alert('Failed to save flowsheet')
+    }
   }
 
-  function handleLoadFlowsheet() {
-    // TODO: Implement load functionality
-    console.log('Load flowsheet')
+  async function handleLoadFlowsheet() {
+    try {
+      // First get list of available flowsheets
+      const listResponse = await fetch(`${API_BASE}/flowsheet/list`)
+      const listResult = await listResponse.json()
+      
+      if (listResult.flowsheets.length === 0) {
+        alert('No saved flowsheets found')
+        return
+      }
+      
+      // For now, load the most recent one
+      const mostRecent = listResult.flowsheets.sort((a, b) => 
+        new Date(b.modified) - new Date(a.modified)
+      )[0]
+      
+      const response = await fetch(`${API_BASE}/flowsheet/load-file?filename=${encodeURIComponent(mostRecent.filename)}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        flowsheetData = result.flowsheet
+        selectedNode = null
+        selectedEdge = null
+        simulationResults = null
+        alert(`Loaded flowsheet: ${mostRecent.filename}`)
+      } else {
+        alert(`Load failed: ${result.message}`)
+      }
+    } catch (error) {
+      console.error('Failed to load flowsheet:', error)
+      alert('Failed to load flowsheet')
+    }
   }
-
   function handleRunSimulation() {
     runSimulation()
   }
@@ -105,7 +169,7 @@
       on:edgeSelect={handleEdgeSelect}
       on:flowsheetUpdate={handleFlowsheetUpdate}
     />
-    <PropertyPanel {selectedNode} {selectedEdge} />
+    <PropertyPanel {selectedNode} {selectedEdge} {flowsheetData} on:updateNode={handleUpdateNode} on:updateStream={handleUpdateStream} />
     <ResultsPanel {simulationResults} />
   </div>
 </main>
