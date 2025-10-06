@@ -18,6 +18,33 @@
 		event.dataTransfer?.setData('application/unit-type', unitType.id);
 		event.dataTransfer!.effectAllowed = 'copy';
 	}
+
+	function getPidSymbol(unitType: UnitType) {
+		switch (unitType.id) {
+			case 'pump':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="none" stroke="#374151" stroke-width="2"/><path d="M15 15 L25 20 L15 25 Z" fill="#374151"/></svg>`;
+			case 'heater':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 10 L30 30" stroke="#374151" stroke-width="2"/><path d="M30 10 L10 30" stroke="#374151" stroke-width="2"/></svg>`;
+			case 'valve':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M10 20 L30 20" stroke="#374151" stroke-width="3"/><circle cx="20" cy="20" r="8" fill="none" stroke="#374151" stroke-width="2"/><path d="M16 16 L24 24" stroke="#374151" stroke-width="2"/><path d="M24 16 L16 24" stroke="#374151" stroke-width="2"/></svg>`;
+			case 'mixer':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="none" stroke="#374151" stroke-width="2"/><path d="M5 20 L15 15 M5 20 L15 25" stroke="#374151" stroke-width="2"/><path d="M35 20 L25 15 M35 20 L25 25" stroke="#374151" stroke-width="2"/><circle cx="20" cy="20" r="3" fill="#374151"/></svg>`;
+			case 'separator':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><path d="M5 20 L35 20" stroke="#374151" stroke-width="2"/><path d="M20 5 L20 35" stroke="#374151" stroke-width="2"/></svg>`;
+			case 'reactor':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><circle cx="20" cy="20" r="8" fill="none" stroke="#374151" stroke-width="2"/><text x="20" y="24" text-anchor="middle" font-size="8" fill="#374151">R</text></svg>`;
+			case 'compressor':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 15 Q20 10 30 15 Q20 20 10 15 Z" fill="#374151"/><path d="M10 25 Q20 30 30 25 Q20 20 10 25 Z" fill="none" stroke="#374151" stroke-width="2"/></svg>`;
+			case 'turbine':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 15 Q20 10 30 15 Q20 20 10 15 Z" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 25 Q20 30 30 25 Q20 20 10 25 Z" fill="#374151"/></svg>`;
+			case 'heat-exchanger':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 10 L30 10 M10 15 L30 15 M10 20 L30 20 M10 25 L30 25 M10 30 L30 30" stroke="#374151" stroke-width="1"/></svg>`;
+			case 'cooler':
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><path d="M10 10 L30 30" stroke="#374151" stroke-width="2"/><path d="M30 10 L10 30" stroke="#374151" stroke-width="2"/><circle cx="15" cy="15" r="2" fill="#374151"/><circle cx="25" cy="25" r="2" fill="#374151"/></svg>`;
+			default:
+				return `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="30" height="30" fill="none" stroke="#374151" stroke-width="2"/><text x="20" y="24" text-anchor="middle" font-size="8" fill="#374151">?</text></svg>`;
+		}
+	}
 </script>
 
 <div class="unit-palette">
@@ -25,7 +52,13 @@
 	<div class="unit-list">
 		{#if onAddStream}
 			<button class="add-stream-button" onclick={onAddStream}>
-				<span class="unit-icon">🌊</span>
+				<span class="unit-icon">
+					<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+						<path d="M10 20 L30 20" stroke="#374151" stroke-width="4" stroke-linecap="round"/>
+						<path d="M25 15 L30 20 L25 25" fill="#374151"/>
+						<circle cx="20" cy="20" r="3" fill="#374151"/>
+					</svg>
+				</span>
 				<span class="unit-name">Add Stream</span>
 			</button>
 		{/if}
@@ -37,7 +70,9 @@
 				role="button"
 				tabindex="0"
 			>
-				<span class="unit-icon">{unitType.icon}</span>
+				<span class="unit-icon">
+					{@html getPidSymbol(unitType)}
+				</span>
 				<span class="unit-name">{unitType.name}</span>
 			</div>
 		{/each}
@@ -92,7 +127,17 @@
 	}
 
 	.unit-icon {
-		font-size: 1.25rem;
+		width: 2rem;
+		height: 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.unit-icon svg {
+		width: 100%;
+		height: 100%;
 	}
 
 	.unit-name {
@@ -122,5 +167,10 @@
 	.add-stream-button:hover {
 		background: #f3f4f6;
 		border-color: #d1d5db;
+	}
+
+	.add-stream-button .unit-icon svg {
+		width: 2rem;
+		height: 2rem;
 	}
 </style>

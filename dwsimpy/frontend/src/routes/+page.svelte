@@ -3,9 +3,9 @@
 	import { SvelteFlow, Controls, Background, MiniMap } from '@xyflow/svelte';
 	import UnitPalette from '../lib/UnitPalette.svelte';
 	import PropertyPanel from '../lib/PropertyPanel.svelte';
-	import Toolbar from '../lib/Toolbar.svelte';
 	import StreamDialog from '../lib/StreamDialog.svelte';
 	import ResultsPanel from '../lib/ResultsPanel.svelte';
+	import { HeaterEditor, PumpEditor, ValveEditor, type HeaterData, type PumpData, type ValveData } from '../lib/unit-editors';
 	import type { Node, Edge } from '@xyflow/svelte';
 
 	// Backend API configuration
@@ -40,6 +40,15 @@
 	let simulationResults: any = $state(null);
 	let showResultsPanel: boolean = $state(false);
 
+	// Unit editor states
+	let showHeaterEditor: boolean = $state(false);
+	let showPumpEditor: boolean = $state(false);
+	let showValveEditor: boolean = $state(false);
+	let selectedUnitData: HeaterData | PumpData | ValveData | null = $state(null);
+
+	// Active tab state
+	let activeTab = $state('Flowsheet');
+
 	// Unit operation types available
 	const unitTypes = [
 		{ id: 'mixer', name: 'Mixer', icon: '🔄' },
@@ -67,6 +76,26 @@
 		// If it's a stream node, open the stream dialog
 		if (!clickedNode.data.unitType) {
 			openStreamDialog(clickedNode);
+			return;
+		}
+
+		// If it's a unit operation, open the appropriate editor
+		const unitType = clickedNode.data.unitType;
+		selectedUnitData = clickedNode.data as HeaterData | PumpData | ValveData;
+
+		switch (unitType) {
+			case 'heater':
+				showHeaterEditor = true;
+				break;
+			case 'pump':
+				showPumpEditor = true;
+				break;
+			case 'valve':
+				showValveEditor = true;
+				break;
+			default:
+				// For other unit types, keep the old property panel behavior
+				break;
 		}
 	}
 
@@ -139,6 +168,39 @@
 		}
 	}
 
+	function saveHeaterData(unitData: HeaterData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+				nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showHeaterEditor = false;
+	}
+
+	function savePumpData(unitData: PumpData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+				nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showPumpEditor = false;
+	}
+
+	function saveValveData(unitData: ValveData) {
+		if (selectedNodeId) {
+			const node = nodes.find(n => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+				nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+		showValveEditor = false;
+	}
+
 	// Toolbar actions
 	function newFlowsheet() {
 		nodes = [];
@@ -196,7 +258,7 @@
 			// Get list of saved flowsheets
 			const listResponse = await fetch(`${API_BASE}/flowsheet/list`);
 			const listData = await listResponse.json();
-			
+
 			if (listData.flowsheets.length === 0) {
 				alert('No saved flowsheets found');
 				return;
@@ -211,7 +273,7 @@
 			if (!loadResponse.ok) {
 				throw new Error(`Failed to load flowsheet: ${loadResponse.statusText}`);
 			}
-			
+
 			const flowsheetData = await loadResponse.json();
 
 			// Clear current flowsheet
@@ -221,7 +283,7 @@
 
 			// Load nodes
 			const loadedNodes: Node<UnitData | StreamData>[] = [];
-			
+
 			// Load unit nodes
 			if (flowsheetData.nodes) {
 				for (const nodeData of flowsheetData.nodes) {
@@ -250,7 +312,7 @@
 			edges = flowsheetData.edges || [];
 
 			alert(`Flowsheet "${filename}" loaded successfully!`);
-			
+
 		} catch (error) {
 			console.error('Load error:', error);
 			alert(`Failed to load flowsheet: ${error instanceof Error ? error.message : String(error)}`);
@@ -375,58 +437,390 @@
 
 		nodes = [...nodes, streamNode];
 	}
+
+	// Tab switching functions
+	function switchTab(tabName: string) {
+		activeTab = tabName;
+	}
+
+	function openUnitEditor(unit: Node<UnitData>) {
+		selectedNodeId = unit.id;
+		selectedUnitData = { ...unit.data };
+
+		switch (unit.data.unitType) {
+			case 'heater':
+				showHeaterEditor = true;
+				break;
+			case 'pump':
+				showPumpEditor = true;
+				break;
+			case 'valve':
+				showValveEditor = true;
+				break;
+			default:
+				break;
+		}
+	}
+
+	function closeUnitEditor() {
+		showHeaterEditor = false;
+		showPumpEditor = false;
+		showValveEditor = false;
+		selectedUnitData = null;
+	}
+
+	function saveUnitData(updatedData: HeaterData | PumpData | ValveData) {
+		if (selectedNodeId) {
+			const nodeIndex = nodes.findIndex(node => node.id === selectedNodeId);
+			if (nodeIndex !== -1) {
+				nodes[nodeIndex].data = { ...nodes[nodeIndex].data, ...updatedData };
+				nodes = [...nodes]; // Trigger reactivity
+			}
+		}
+
+		closeUnitEditor();
+	}
 </script>
 
-<div class="app-container">
-	<Toolbar
-		onNew={newFlowsheet}
-		onSave={saveFlowsheet}
-		onLoad={loadFlowsheet}
-		onRun={runSimulation}
-		onToggleResults={toggleResultsPanel}
-		showResults={showResultsPanel}
-	/>
-
-	<div class="main-content">
-		<UnitPalette {unitTypes} onAddStream={addStream} />
-
-		<div class="flow-container" ondragover={ondragover} ondrop={ondrop} role="application">
-			<SvelteFlow
-				{nodes}
-				{edges}
-			>
-				<Controls />
-				<Background />
-				<MiniMap />
-			</SvelteFlow>
+<div class="dwsim-window">
+	<!-- Title Bar -->
+	<div class="title-bar">
+		<span class="title">DWSIM — Process Simulation</span>
+		<span class="path">[C:\Users\user\source\repos\DWSIM-Web\bin\Debug\process_simulation.dwxml]</span>
+		<div class="window-controls">
+			<button title="Minimize">−</button>
+			<button title="Maximize">□</button>
+			<button title="Close">×</button>
 		</div>
-
-		<PropertyPanel {selectedNode} />
 	</div>
 
-	<StreamDialog
-		stream={selectedStream}
-		isOpen={showStreamDialog}
-		onClose={closeStreamDialog}
-		onSave={saveStreamData}
-	/>
+	<!-- Menu Bar -->
+	<div class="menu-bar">
+		<ul>
+			<li>File</li>
+			<li>Edit</li>
+			<li>Insert</li>
+			<li>Tools</li>
+			<li>Dynamics</li>
+			<li>Utilities</li>
+			<li>Optimization</li>
+			<li>Results</li>
+			<li>Plugins</li>
+			<li>Spreadsheet</li>
+			<li>Windows</li>
+			<li>View</li>
+			<li>Help</li>
+		</ul>
+	</div>
 
-	<ResultsPanel
-		results={simulationResults}
-		isVisible={showResultsPanel}
-	/>
+	<!-- Toolbar -->
+	<div class="toolbar">
+		<div class="toolbar-section">
+			<button title="Material Stream" onclick={addStream}>📊</button>
+			<button title="Energy Stream">⚡</button>
+			<button title="Pressure Changers">🔧</button>
+			<button title="Separators/Tanks">🛢️</button>
+			<button title="Mixers/Splitters">🔀</button>
+			<button title="Exchangers">🔄</button>
+			<button title="Reactors">⚗️</button>
+			<button title="Columns">📈</button>
+			<button title="Solids">⛏️</button>
+			<button title="CAPE-OPEN User Models">🔌</button>
+			<button title="Logical Ops">🔍</button>
+			<button title="Indicators">📊</button>
+			<button title="Controllers">🎛️</button>
+			<button title="Other">❓</button>
+		</div>
+	</div>
+
+	<!-- Tab Bar -->
+	<div class="tab-bar">
+		<div class="tabs">
+			<button class={activeTab === 'Material Streams' ? 'active' : ''} onclick={() => switchTab('Material Streams')}>Material Streams</button>
+			<button class={activeTab === 'Spreadsheet' ? 'active' : ''} onclick={() => switchTab('Spreadsheet')}>Spreadsheet</button>
+			<button class={activeTab === 'Charts' ? 'active' : ''} onclick={() => switchTab('Charts')}>Charts</button>
+			<button class={activeTab === 'Settings' ? 'active' : ''} onclick={() => switchTab('Settings')}>Settings</button>
+			<button class={activeTab === 'Flowsheet' ? 'active' : ''} onclick={() => switchTab('Flowsheet')}>Flowsheet</button>
+		</div>
+		<div class="tab-actions">
+			<button title="Solve Flowsheet (F5)" onclick={runSimulation}>▶️</button>
+			<button title="Abort Solver (Pause)">⏸️</button>
+			<div class="search-box">
+				<input type="text" placeholder="Search..." />
+			</div>
+		</div>
+	</div>
+
+	<!-- Control Panel Mode -->
+	<div class="control-panel">
+		<span>Control Panel Mode</span>
+	</div>
+
+	<!-- Main Content Area -->
+	<div class="main-content">
+		{#if activeTab === 'Flowsheet'}
+			<div class="flowsheet-container">
+				<UnitPalette {unitTypes} onAddStream={addStream} />
+
+				<div class="flow-container" ondragover={ondragover} ondrop={ondrop} role="application">
+					<SvelteFlow
+						{nodes}
+						{edges}
+						on:nodeClick={onNodeClick}
+						on:paneClick={onPaneClick}
+						on:connect={onConnect}
+					>
+						<Controls />
+						<Background />
+						<MiniMap />
+					</SvelteFlow>
+				</div>
+
+				<PropertyPanel selectedNode={selectedNode && !['heater', 'pump', 'valve'].includes(selectedNode.data.unitType) ? selectedNode : null} />
+			</div>
+		{:else if activeTab === 'Material Streams'}
+			<div class="tab-content">
+				<h2>Material Streams</h2>
+				<p>Material streams management interface would go here.</p>
+				<div class="streams-list">
+					{#each nodes.filter(node => !node.data.unitType) as stream}
+						<div class="stream-item" onclick={() => openStreamDialog(stream)}>
+							<strong>{stream.data.name || stream.id}</strong>
+							<span>T: {stream.data.temperature?.toFixed(1)} K</span>
+							<span>P: {stream.data.pressure?.toFixed(0)} Pa</span>
+							<span>Flow: {stream.data.mass_flow_rate?.toFixed(2)} kg/s</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{:else if activeTab === 'Spreadsheet'}
+			<div class="tab-content">
+				<h2>Spreadsheet</h2>
+				<p>Spreadsheet interface for calculations would go here.</p>
+			</div>
+		{:else if activeTab === 'Charts'}
+			<div class="tab-content">
+				<h2>Charts</h2>
+				<p>Charts and visualization interface would go here.</p>
+			</div>
+		{:else if activeTab === 'Settings'}
+			<div class="tab-content">
+				<h2>Settings</h2>
+				<p>Application settings interface would go here.</p>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Status Bar -->
+	<div class="status-bar">
+		<span>Ready</span>
+		<span class="status-right">
+			<span>{new Date().toLocaleTimeString()}</span>
+			<span>{new Date().toLocaleDateString()}</span>
+		</span>
+	</div>
 </div>
 
+<StreamDialog
+	stream={selectedStream}
+	isOpen={showStreamDialog}
+	onClose={closeStreamDialog}
+	onSave={saveStreamData}
+/>
+
+<ResultsPanel
+	results={simulationResults}
+	isVisible={showResultsPanel}
+/>
+
+<HeaterEditor
+	unit={selectedUnitData as HeaterData}
+	isOpen={showHeaterEditor}
+	onClose={() => showHeaterEditor = false}
+	onSave={saveHeaterData}
+/>
+
+<PumpEditor
+	unit={selectedUnitData as PumpData}
+	isOpen={showPumpEditor}
+	onClose={() => showPumpEditor = false}
+	onSave={savePumpData}
+/>
+
+<ValveEditor
+	unit={selectedUnitData as ValveData}
+	isOpen={showValveEditor}
+	onClose={() => showValveEditor = false}
+	onSave={saveValveData}
+/>
+
 <style>
-	.app-container {
+	.dwsim-window {
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
+		background-color: #f0f0f0;
+	}
+
+	.title-bar {
+		height: 30px;
+		background: linear-gradient(to right, #e0e0e0, #d0d0d0);
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		border-bottom: 1px solid #ccc;
+		font-size: 12px;
+	}
+
+	.title {
+		font-weight: bold;
+	}
+
+	.path {
+		margin-left: auto;
+		color: #666;
+	}
+
+	.window-controls {
+		margin-left: auto;
+	}
+
+	.window-controls button {
+		width: 30px;
+		height: 20px;
+		border: none;
+		background: none;
+		font-size: 16px;
+		cursor: pointer;
+	}
+
+	.menu-bar {
+		height: 25px;
+		background: #c0c0c0;
+		display: flex;
+		align-items: center;
+		padding: 0 5px;
+	}
+
+	.menu-bar ul {
+		list-style: none;
+		display: flex;
+		margin: 0;
+		padding: 0;
+		gap: 10px;
+	}
+
+	.menu-bar li {
+		padding: 4px 8px;
+		cursor: pointer;
+	}
+
+	.menu-bar li:hover {
+		background: #a0a0a0;
+	}
+
+	.toolbar {
+		height: 40px;
+		background: #e8e8e8;
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		border-bottom: 1px solid #ccc;
+	}
+
+	.toolbar-section button {
+		width: 30px;
+		height: 30px;
+		margin-right: 5px;
+		border: 1px solid #ccc;
+		background: white;
+		cursor: pointer;
+		font-size: 14px;
+	}
+
+	.toolbar-section button:hover {
+		background: #f0f0f0;
+	}
+
+	.tab-bar {
+		height: 35px;
+		background: #f8f8f8;
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		border-bottom: 1px solid #ccc;
+	}
+
+	.tabs {
+		display: flex;
+		gap: 5px;
+	}
+
+	.tabs button {
+		padding: 6px 12px;
+		border: 1px solid #ccc;
+		background: white;
+		cursor: pointer;
+		font-size: 12px;
+	}
+
+	.tabs button.active {
+		background: #e0e0e0;
+		border-bottom: none;
+	}
+
+	.tabs button:hover {
+		background: #f0f0f0;
+	}
+
+	.tab-actions {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.tab-actions button {
+		width: 30px;
+		height: 30px;
+		border: 1px solid #ccc;
+		background: white;
+		cursor: pointer;
+		font-size: 14px;
+	}
+
+	.tab-actions button:hover {
+		background: #f0f0f0;
+	}
+
+	.search-box input {
+		padding: 4px 8px;
+		border: 1px solid #ccc;
+		border-radius: 3px;
+		font-size: 12px;
+	}
+
+	.control-panel {
+		height: 25px;
+		background: #d8d8d8;
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		font-size: 12px;
+		border-bottom: 1px solid #ccc;
 	}
 
 	.main-content {
 		flex: 1;
 		display: flex;
+		overflow: hidden;
+	}
+
+	.flowsheet-container {
+		flex: 1;
+		display: flex;
+		background: #f0f0f0;
 	}
 
 	.flow-container {
@@ -434,6 +828,49 @@
 		position: relative;
 	}
 
+	.tab-content {
+		flex: 1;
+		padding: 20px;
+		background: white;
+		overflow-y: auto;
+	}
+
+	.streams-list {
+		margin-top: 20px;
+	}
+
+	.stream-item {
+		padding: 10px;
+		border: 1px solid #ddd;
+		margin-bottom: 5px;
+		cursor: pointer;
+		background: #f9f9f9;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.stream-item:hover {
+		background: #f0f0f0;
+	}
+
+	.status-bar {
+		height: 20px;
+		background: #e0e0e0;
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		font-size: 12px;
+		border-top: 1px solid #ccc;
+	}
+
+	.status-right {
+		margin-left: auto;
+		display: flex;
+		gap: 20px;
+	}
+
+	/* Svelte Flow Styles */
 	:global(.svelte-flow) {
 		height: 100%;
 	}
