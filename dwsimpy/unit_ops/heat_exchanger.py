@@ -18,55 +18,76 @@ class HeatExchanger(BaseUnitOperation):
 
     def __init__(self, unit_id: str, config: Dict[str, Any]):
         super().__init__(unit_id, config)
-        self.calc_mode = config.get("calc_mode", "calc_both_temp")  # calc_temp_hot_out, calc_temp_cold_out, calc_both_temp, etc.
         self.ua = config.get("ua", 1000.0)  # Overall heat transfer coefficient * area in W/K
         self.area = config.get("area", 10.0)  # Heat transfer area in m²
         self.overall_heat_transfer_coeff = config.get("overall_heat_transfer_coeff", 100.0)  # U in W/m².K
-        self.hot_stream_in = None
-        self.hot_stream_out = None
-        self.cold_stream_in = None
-        self.cold_stream_out = None
-        self.property_package = None
 
-    def calculate(self):
-        """Perform the heat exchanger calculation."""
-        if not self.hot_stream_in or not self.hot_stream_out or not self.cold_stream_in or not self.cold_stream_out:
-            raise ValueError("All streams must be attached")
+    def solve(self) -> float:
+        """Solve the heat exchanger equations"""
+        if len(self.inlet_streams) != 2:
+            raise ValueError("Heat exchanger requires exactly 2 inlet streams")
 
-        if not all(s.calculated for s in [self.hot_stream_in, self.cold_stream_in]):
-            raise ValueError("Input streams not calculated")
+        if len(self.outlet_streams) != 2:
+            raise ValueError("Heat exchanger requires exactly 2 outlet streams")
 
-        # Simplified heat balance
-        # Assume counter-current, etc.
+        hot_inlet = self.inlet_streams[0]  # Assume first inlet is hot
+        cold_inlet = self.inlet_streams[1]  # Assume second inlet is cold
+        hot_outlet = self.outlet_streams[0]  # Assume first outlet is hot
+        cold_outlet = self.outlet_streams[1]  # Assume second outlet is cold
 
-        # For simplicity, assume energy balance
-        # Q = m_hot * cp_hot * (T_hot_in - T_hot_out) = m_cold * cp_cold * (T_cold_out - T_cold_in)
+        # Simplified heat transfer calculation
+        # Assume counter-current heat exchanger with energy balance
 
-        # But for now, placeholder
-        # Copy properties and adjust temperatures
+        # Calculate heat transfer
+        # Q = U * A * ΔT_lm (log mean temperature difference)
+        # For simplicity, assume ΔT = (T_hot_in - T_cold_in) / 2
+        delta_t = (hot_inlet.temperature - cold_inlet.temperature) / 2.0
 
-        # Hot stream out
-        self.hot_stream_out.mass_flow = self.hot_stream_in.mass_flow
-        self.hot_stream_out.pressure = self.hot_stream_in.pressure
-        self.hot_stream_out.compositions = self.hot_stream_in.compositions.copy()
-        # Assume temperature drop
-        self.hot_stream_out.temperature = self.hot_stream_in.temperature - 10  # Placeholder
-        # Enthalpy adjustment
-        cp_assumed = 4.18  # kJ/kg.K
-        delta_h = -cp_assumed * 10
-        self.hot_stream_out.enthalpy = self.hot_stream_in.enthalpy + delta_h
+        # Calculate heat transfer rate
+        q_transfer = self.ua * delta_t  # W
 
-        # Cold stream out
-        self.cold_stream_out.mass_flow = self.cold_stream_in.mass_flow
-        self.cold_stream_out.pressure = self.cold_stream_in.pressure
-        self.cold_stream_out.compositions = self.cold_stream_in.compositions.copy()
-        # Assume temperature rise
-        self.cold_stream_out.temperature = self.cold_stream_in.temperature + 10  # Placeholder
-        delta_h_cold = cp_assumed * 10
-        self.cold_stream_out.enthalpy = self.cold_stream_in.enthalpy + delta_h_cold
+        # Limit by available heat in hot stream
+        cp_hot = 4186  # J/kg·K approximation
+        max_q_hot = hot_inlet.mass_flow_rate * cp_hot * (hot_inlet.temperature - cold_inlet.temperature)
 
-        self.hot_stream_out.calculated = True
-        self.cold_stream_out.calculated = True
+        if max_q_hot > 0:
+            q_actual = min(q_transfer, max_q_hot)
+        else:
+            q_actual = 0.0
+
+        # Calculate outlet temperatures
+        if hot_inlet.mass_flow_rate > 0:
+            delta_t_hot = -q_actual / (hot_inlet.mass_flow_rate * cp_hot)
+            hot_outlet.temperature = hot_inlet.temperature + delta_t_hot
+        else:
+            hot_outlet.temperature = hot_inlet.temperature
+
+        if cold_inlet.mass_flow_rate > 0:
+            delta_t_cold = q_actual / (cold_inlet.mass_flow_rate * cp_hot)
+            cold_outlet.temperature = cold_inlet.temperature + delta_t_cold
+        else:
+            cold_outlet.temperature = cold_inlet.temperature
+
+        # Set outlet stream properties
+        for outlet in [hot_outlet, cold_outlet]:
+            inlet = hot_inlet if outlet == hot_outlet else cold_inlet
+            outlet.mass_flow_rate = inlet.mass_flow_rate
+            outlet.pressure = inlet.pressure
+            outlet.composition = inlet.composition.copy()
+
+        # Store results
+        self.results = {
+            'heat_transfer_rate': q_actual,
+            'ua': self.ua,
+            'area': self.area,
+            'hot_inlet_temp': hot_inlet.temperature,
+            'hot_outlet_temp': hot_outlet.temperature,
+            'cold_inlet_temp': cold_inlet.temperature,
+            'cold_outlet_temp': cold_outlet.temperature,
+            'delta_t': delta_t
+        }
+
+        return 0.0  # Perfect convergence for simplified model
 
     def get_display_name(self) -> str:
         return "Heat Exchanger"

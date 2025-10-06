@@ -59,7 +59,7 @@
   }
 
   function updateFlowsheet() {
-    flowsheetData = { nodes, edges }
+    flowsheetData = { nodes, edges, streams: flowsheetData.streams || [] }
     dispatch('flowsheetUpdate', flowsheetData)
   }
 
@@ -79,6 +79,8 @@
 
   function onNodeClick(event) {
     const node = event.detail
+    selectedNode = node
+    selectedEdge = null  // Clear edge selection
     dispatch('nodeSelect', { node })
   }
 
@@ -96,6 +98,22 @@
       type: 'default'
     }
     edges = [...edges, newEdge]
+
+    // Add default stream data
+    const streamData = {
+      id: newEdge.id,
+      name: `Stream ${newEdge.id}`,
+      temperature: 298.15,
+      pressure: 101325,
+      mass_flow_rate: 0.0,
+      composition: {}
+    }
+
+    if (!flowsheetData.streams) {
+      flowsheetData.streams = []
+    }
+    flowsheetData.streams = [...flowsheetData.streams, streamData]
+
     updateFlowsheet()
   }
 
@@ -110,8 +128,9 @@
   }
 
   function onEdgeClick(event) {
-    // For now, just log the edge click - could add context menu later
-    console.log('Edge clicked:', event.detail)
+    selectedEdge = event.detail
+    selectedNode = null  // Clear node selection
+    dispatch('edgeSelect', { edge: selectedEdge })
   }
 
   function onEdgeDelete(event) {
@@ -123,6 +142,9 @@
   const nodeTypes = {
     unitNode: UnitNode
   }
+
+  let selectedNode = $state(null)
+  let selectedEdge = $state(null)
 </script>
 
 <div class="flowsheet-canvas" on:drop={onDrop} on:dragover={onDragOver}>

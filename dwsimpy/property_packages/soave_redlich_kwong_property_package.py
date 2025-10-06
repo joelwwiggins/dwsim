@@ -238,33 +238,136 @@ class SoaveRedlichKwongPropertyPackage(IPropertyPackage):
 
     def calculate_viscosity(self, temperature: float, pressure: float,
                            composition: Dict[str, float], phase: str = 'liquid') -> float:
-        """Calculate mixture viscosity using Chung et al. method"""
-        # Simplified implementation using ideal gas mixing rules
-        total_viscosity = 0.0
-        for comp, mole_frac in composition.items():
-            if comp in self._components:
-                comp_data = self._components[comp]
-                # Use simple temperature dependence for gas viscosity
-                mu0 = comp_data.get('viscosity', 0.00001)  # Pa·s at reference temp
-                T0 = 298.15  # K
-                viscosity = mu0 * (temperature / T0) ** 0.7  # Simplified power law
-                total_viscosity += viscosity * mole_frac
-        return total_viscosity if total_viscosity > 0 else 0.00001
+        """Calculate mixture viscosity using proper correlations"""
+        if phase.lower() == 'gas' or phase.lower() == 'vapor':
+            return self._calculate_gas_viscosity(temperature, pressure, composition)
+        else:
+            return self._calculate_liquid_viscosity(temperature, pressure, composition)
 
     def calculate_thermal_conductivity(self, temperature: float, pressure: float,
                                       composition: Dict[str, float], phase: str = 'liquid') -> float:
-        """Calculate mixture thermal conductivity"""
-        # Simplified implementation using ideal gas mixing rules
+        """Calculate mixture thermal conductivity using proper correlations"""
+        if phase.lower() == 'gas' or phase.lower() == 'vapor':
+            return self._calculate_gas_thermal_conductivity(temperature, pressure, composition)
+        else:
+            return self._calculate_liquid_thermal_conductivity(temperature, pressure, composition)
+
+    def _calculate_gas_viscosity(self, temperature: float, pressure: float,
+                                composition: Dict[str, float]) -> float:
+        """Calculate gas mixture viscosity using Sutherland correlation"""
+        total_viscosity = 0.0
+        total_mw = 0.0
+
+        for comp_id, mole_frac in composition.items():
+            if comp_id in self._components:
+                comp_data = self._components[comp_id]
+
+                # Sutherland correlation: μ = μ0 * (T/T0)^(3/2) * (T0 + C)/(T + C)
+                mu0 = comp_data.get('viscosity_sutherland_mu0', comp_data.get('viscosity', 1e-5))
+                T0 = comp_data.get('viscosity_sutherland_T0', 273.15)
+                C = comp_data.get('viscosity_sutherland_C', 100.0)
+
+                viscosity = mu0 * (temperature / T0)**(3/2) * (T0 + C) / (temperature + C)
+                mw = comp_data.get('molecular_weight', 28.97)
+
+                total_viscosity += mole_frac * viscosity * math.sqrt(mw)
+                total_mw += mole_frac * math.sqrt(mw)
+
+        if total_mw > 0:
+            # Herning-Zipperer mixing rule for gas mixtures
+            return (total_viscosity / total_mw)**2
+        else:
+            return 1e-5
+
+    def _calculate_liquid_viscosity(self, temperature: float, pressure: float,
+                                   composition: Dict[str, float]) -> float:
+        """Calculate liquid mixture viscosity using Andrade correlation"""
+        total_viscosity = 0.0
+
+        for comp_id, mole_frac in composition.items():
+            if comp_id in self._components:
+                comp_data = self._components[comp_id]
+
+                # Andrade correlation: μ = A * exp(B/T)
+                A = comp_data.get('viscosity_andrade_A', 0.001)
+                B = comp_data.get('viscosity_andrade_B', 1000.0)
+
+                viscosity = A * math.exp(B / temperature)
+
+                # Apply pressure correction (simplified)
+                pressure_correction = 1.0 + 1e-9 * (pressure - 101325)
+                viscosity *= pressure_correction
+
+                total_viscosity += mole_frac / viscosity
+
+        if total_viscosity > 0:
+            # Harmonic mean for liquid mixtures
+            return 1.0 / total_viscosity
+        else:
+            return 0.001
+
+    def _calculate_gas_thermal_conductivity(self, temperature: float, pressure: float,
+                                           composition: Dict[str, float]) -> float:
+        """Calculate gas mixture thermal conductivity using Eucken correlation"""
         total_k = 0.0
-        for comp, mole_frac in composition.items():
-            if comp in self._components:
-                comp_data = self._components[comp]
-                # Use simple temperature dependence
-                k0 = comp_data.get('thermal_conductivity', 0.03)  # W/m·K at reference temp
-                T0 = 298.15  # K
-                conductivity = k0 * (temperature / T0) ** 0.8  # Simplified power law
-                total_k += conductivity * mole_frac
-        return total_k if total_k > 0 else 0.03
+        total_mw = 0.0
+
+        for comp_id, mole_frac in composition.items():
+            if comp_id in self._components:
+                comp_data = self._components[comp_id]
+
+                # Eucken correlation: k = (Cp + 1.25*R/MW) * μ
+                cp = comp_data.get('cp', 36.0)  # J/mol/K
+                mw = comp_data.get('molecular_weight', 28.97)
+                r_gas = 8.314  # J/mol/K
+
+                # Get viscosity first
+                viscosity = self._calculate_pure_gas_viscosity(comp_id, temperature)
+
+                # Eucken correlation
+                conductivity = (cp + 1.25 * r_gas / mw) * viscosity / 1000  # Convert to W/m·K
+
+                total_k += mole_frac * conductivity * math.sqrt(mw)
+                total_mw += mole_frac * math.sqrt(mw)
+
+        if total_mw > 0:
+            # Wassiljewa mixing rule
+            return total_k / total_mw
+        else:
+            return 0.03
+
+    def _calculate_liquid_thermal_conductivity(self, temperature: float, pressure: float,
+                                              composition: Dict[str, float]) -> float:
+        """Calculate liquid mixture thermal conductivity using Missenard correlation"""
+        total_k = 0.0
+
+        for comp_id, mole_frac in composition.items():
+            if comp_id in self._components:
+                comp_data = self._components[comp_id]
+
+                # Simplified temperature correction
+                k_ref = comp_data.get('thermal_conductivity', 0.6)
+                T_ref = 298.15
+
+                # Temperature correction
+                conductivity = k_ref * (temperature / T_ref)**(-1/3)
+
+                total_k += mole_frac * conductivity
+
+        return total_k if total_k > 0 else 0.6
+
+    def _calculate_pure_gas_viscosity(self, comp_id: str, temperature: float) -> float:
+        """Calculate pure gas viscosity using Sutherland correlation"""
+        if comp_id in self._components:
+            comp_data = self._components[comp_id]
+
+            mu0 = comp_data.get('viscosity_sutherland_mu0', comp_data.get('viscosity', 1e-5))
+            T0 = comp_data.get('viscosity_sutherland_T0', 273.15)
+            C = comp_data.get('viscosity_sutherland_C', 100.0)
+
+            return mu0 * (temperature / T0)**(3/2) * (T0 + C) / (temperature + C)
+        else:
+            return 1e-5
 
     def calculate_flash(self, temperature: float, pressure: float,
                        composition: Dict[str, float], flash_type: str) -> Dict[str, Any]:

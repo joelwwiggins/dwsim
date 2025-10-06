@@ -102,8 +102,9 @@ async def load_flowsheet(data: FlowsheetData):
 
         for node in data.nodes:
             print(f"Creating unit operation: {node['data']['unitType']}, {node['id']}")
+            unit_type = node['data']['unitType'].lower()  # Convert to lowercase for factory
             unit_op = UnitOperationFactory.create_unit_operation(
-                node['data']['unitType'],
+                unit_type,
                 node['id'],
                 node['data']
             )
@@ -202,36 +203,86 @@ async def health_check():
 
 @app.post("/api/flowsheet/save")
 async def save_flowsheet(data: FlowsheetData, filename: str = "default"):
-    """Save a flowsheet to storage"""
+    """Save a flowsheet to storage using flowsheet solver serialization"""
     try:
+        if flowsheet_solver is None:
+            raise HTTPException(status_code=500, detail="Flowsheet solver not initialized")
+
+        print(f"Saving flowsheet with {len(data.nodes)} nodes and {len(data.streams or [])} streams")
+
+        # First load the flowsheet data into the solver
+        load_result = await load_flowsheet(data)
+        print(f"Load result: {load_result}")
+
+        # Then save using the solver's serialization method
         file_path = FLOWsheet_STORAGE_DIR / f"{filename}.json"
-        
-        with open(file_path, 'w') as f:
-            json.dump(data.dict(), f, indent=2)
-        
+        flowsheet_solver.save_to_file(str(file_path))
+        print(f"Flowsheet saved to {file_path}")
+
         return SimulationResult(
             success=True,
             message=f"Flowsheet saved as {filename}.json"
         )
-    
+
     except Exception as e:
+        print(f"Error in save_flowsheet: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to save flowsheet: {str(e)}")
 
 @app.get("/api/flowsheet/load/{filename}")
 async def load_saved_flowsheet(filename: str):
-    """Load a flowsheet from storage"""
+    """Load a flowsheet from storage using flowsheet solver deserialization"""
     try:
+        if flowsheet_solver is None:
+            raise HTTPException(status_code=500, detail="Flowsheet solver not initialized")
+
         file_path = FLOWsheet_STORAGE_DIR / f"{filename}.json"
-        
+
         if not file_path.exists():
             raise HTTPException(status_code=404, detail=f"Flowsheet {filename} not found")
-        
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        
-        return data
-    
+
+        # Load flowsheet using solver's deserialization
+        loaded_solver = FlowsheetSolver.load_from_file(str(file_path))
+
+        # Convert to UI-compatible format
+        ui_data = {
+            "nodes": [
+                {
+                    "id": unit.id,
+                    "type": unit.__class__.__name__.lower(),  # Convert to lowercase for UI
+                    "position": {"x": 100 + i * 200, "y": 100},  # Default positions
+                    "data": {
+                        "unitType": unit.__class__.__name__,
+                        "name": unit.name,
+                        **unit.parameters
+                    }
+                }
+                for i, unit in enumerate(loaded_solver.unit_operations.values())
+            ],
+            "edges": getattr(loaded_solver, 'edges', []),
+            "streams": [
+                {
+                    "id": stream.id,
+                    "name": stream.name,
+                    "temperature": stream.temperature,
+                    "pressure": stream.pressure,
+                    "mass_flow_rate": stream.mass_flow_rate,
+                    "composition": stream.composition,
+                    # Include calculated transport properties
+                    "viscosity": stream.property_package.calculate_viscosity(stream.temperature, stream.pressure, stream.phase) if stream.property_package else None,
+                    "thermal_conductivity": stream.property_package.calculate_thermal_conductivity(stream.temperature, stream.pressure, stream.phase) if stream.property_package else None
+                }
+                for stream in loaded_solver.streams.values()
+            ]
+        }
+
+        return ui_data
+
     except Exception as e:
+        print(f"Error in load_saved_flowsheet: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to load flowsheet: {str(e)}")
 
 @app.get("/api/flowsheet/list")

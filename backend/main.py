@@ -30,24 +30,6 @@ from dwsimpy.unit_operations.base_unit import BaseUnitOperation
 from dwsimpy.material_stream import MaterialStream
 from dwsimpy.factories import UnitOperationFactory
 
-# Register unit operations
-UnitOperationFactory.register("mixer", Mixer)
-UnitOperationFactory.register("heater", Heater)
-UnitOperationFactory.register("cooler", Cooler)
-UnitOperationFactory.register("valve", Valve)
-UnitOperationFactory.register("pump", Pump)
-UnitOperationFactory.register("splitter", Splitter)
-# UnitOperationFactory.register("tank", Tank)
-UnitOperationFactory.register("compressor", Compressor)
-UnitOperationFactory.register("expander", Expander)
-UnitOperationFactory.register("heat_exchanger", HeatExchanger)
-UnitOperationFactory.register("pipe", Pipe)
-UnitOperationFactory.register("vessel", Vessel)
-UnitOperationFactory.register("component_separator", ComponentSeparator)
-UnitOperationFactory.register("filter", Filter)
-UnitOperationFactory.register("orifice_plate", OrificePlate)
-UnitOperationFactory.register("relief_valve", ReliefValve)
-
 app = FastAPI(title="DWSIM Python API", version="1.0.0")
 
 # Configure CORS
@@ -76,6 +58,7 @@ class EdgeData(BaseModel):
 class FlowsheetData(BaseModel):
     nodes: List[Dict[str, Any]]  # Simplified
     edges: List[Dict[str, Any]]  # Simplified
+    streams: Optional[List[Dict[str, Any]]] = None  # Stream properties
 
 class SimulationResult(BaseModel):
     success: bool
@@ -99,21 +82,35 @@ async def load_flowsheet(data: FlowsheetData):
 
         # Convert UI nodes to unit operations
         unit_operations_list = []
-        streams = []
 
         for node in data.nodes:
-            print(f"Creating unit operation: {node.type}, {node.id}")
+            print(f"Creating unit operation: {node['data']['unitType']}, {node['id']}")
             unit_op = UnitOperationFactory.create_unit_operation(
-                node.type,
-                node.id,
-                node.data
+                node['data']['unitType'],
+                node['id'],
+                node['data']
             )
             unit_operations_list.append(unit_op)
 
-        # Create streams from edges
-        for edge in data.edges:
-            stream = MaterialStream(edge.id)
-            streams.append(stream)
+        # Create streams from provided data or edges
+        streams = []
+        if data.streams:
+            for stream_data in data.streams:
+                stream = MaterialStream(stream_data['id'], stream_data.get('name', stream_data['id']))
+                # Set properties if provided
+                if 'temperature' in stream_data:
+                    stream.temperature = stream_data['temperature']
+                if 'pressure' in stream_data:
+                    stream.pressure = stream_data['pressure']
+                if 'mass_flow_rate' in stream_data:
+                    stream.mass_flow_rate = stream_data['mass_flow_rate']
+                if 'composition' in stream_data:
+                    stream.composition = stream_data['composition']
+                streams.append(stream)
+        else:
+            for edge in data.edges:
+                stream = MaterialStream(edge['id'])
+                streams.append(stream)
 
         print(f"Loading flowsheet with {len(unit_operations_list)} units and {len(streams)} streams")
         # Load into solver with edge connectivity
@@ -145,10 +142,7 @@ async def run_simulation():
             )
         else:
             # Get results from solver
-            results = {
-                "status": flowsheet_solver.get_status(),
-                "progress": flowsheet_solver.get_progress()
-            }
+            results = flowsheet_solver._collect_results()
             return SimulationResult(
                 success=True,
                 message="Simulation completed successfully",

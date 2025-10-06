@@ -1,0 +1,30 @@
+{
+  "unit_operations": [
+    {
+      "id": "mixer1",
+      "type": "Mixer",
+      "config": {},
+      "name": "mixer1"
+    }
+  ],
+  "streams": [
+    {
+      "id": "stream1",
+      "name": "Feed Stream",
+      "temperature": 298.15,
+      "pressure": 101325,
+      "mass_flow_rate": 1.0,
+      "molar_flow_rate": 0.0,
+      "composition": {
+        "water": 1.0
+      },
+      "phase": "liquid",
+      "property_package_type": "PengRobinsonPropertyPackage"
+    }
+  ],
+  "edges": [],
+  "solver_settings": {
+    "convergence_tolerance": 1e-06,
+    "max_iterations": 100
+  }
+}

@@ -2,9 +2,12 @@
   import FlowsheetCanvas from './lib/FlowsheetCanvas.svelte'
   import UnitPalette from './lib/UnitPalette.svelte'
   import PropertyPanel from './lib/PropertyPanel.svelte'
+  import ResultsPanel from './lib/ResultsPanel.svelte'
   import Toolbar from './lib/Toolbar.svelte'
 
   let selectedNode = null
+  let selectedEdge = null
+  let simulationResults = null
   let flowsheetData = {
     nodes: [],
     edges: []
@@ -38,13 +41,27 @@
       })
       const result = await response.json()
       console.log('Simulation result:', result)
+      if (result.success) {
+        simulationResults = result.results
+      } else {
+        simulationResults = null
+        alert(`Simulation failed: ${result.message}`)
+      }
     } catch (error) {
       console.error('Failed to run simulation:', error)
+      simulationResults = null
+      alert('Failed to run simulation')
     }
   }
 
   function handleNodeSelect(event) {
     selectedNode = event.detail.node
+    selectedEdge = null
+  }
+
+  function handleEdgeSelect(event) {
+    selectedEdge = event.detail.edge
+    selectedNode = null
   }
 
   function handleFlowsheetUpdate(event) {
@@ -55,6 +72,7 @@
   function handleNewFlowsheet() {
     flowsheetData = { nodes: [], edges: [] }
     selectedNode = null
+    selectedEdge = null
   }
 
   function handleSaveFlowsheet() {
@@ -84,9 +102,11 @@
     <FlowsheetCanvas
       {flowsheetData}
       on:nodeSelect={handleNodeSelect}
+      on:edgeSelect={handleEdgeSelect}
       on:flowsheetUpdate={handleFlowsheetUpdate}
     />
-    <PropertyPanel {selectedNode} />
+    <PropertyPanel {selectedNode} {selectedEdge} />
+    <ResultsPanel {simulationResults} />
   </div>
 </main>
 

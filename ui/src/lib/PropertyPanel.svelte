@@ -1,11 +1,18 @@
 <script>
   export let selectedNode = null
+  export let selectedEdge = null
 
   let properties = {}
+  let streamProperties = {}
 
   $: if (selectedNode) {
     // Initialize properties based on node type
     properties = getDefaultProperties(selectedNode.data.type)
+  }
+
+  $: if (selectedEdge) {
+    // Initialize stream properties
+    streamProperties = getDefaultStreamProperties()
   }
 
   function getDefaultProperties(type) {
@@ -73,15 +80,58 @@
     return defaults[type] || {}
   }
 
+  function getDefaultStreamProperties() {
+    return {
+      temperature: 298.15,
+      pressure: 101325,
+      massFlowRate: 0.0,
+      composition: {}
+    }
+  }
+
   function updateProperty(key, value) {
     properties[key] = value
     // Here we would update the node data and notify the backend
+  }
+
+  function updateStreamProperty(key, value) {
+    streamProperties[key] = value
+    // TODO: Update the flowsheet data and notify backend
   }
 </script>
 
 <div class="property-panel">
   <h3>Properties</h3>
-  {#if selectedNode}
+  {#if selectedEdge}
+    <div class="properties">
+      <div class="property-group">
+        <h4>Stream Properties</h4>
+        <div class="property-item">
+          <label>Temperature (K):</label>
+          <input type="number" step="0.01" bind:value={streamProperties.temperature} on:input={() => updateStreamProperty('temperature', streamProperties.temperature)} />
+        </div>
+        <div class="property-item">
+          <label>Pressure (Pa):</label>
+          <input type="number" bind:value={streamProperties.pressure} on:input={() => updateStreamProperty('pressure', streamProperties.pressure)} />
+        </div>
+        <div class="property-item">
+          <label>Mass Flow Rate (kg/s):</label>
+          <input type="number" step="0.001" bind:value={streamProperties.massFlowRate} on:input={() => updateStreamProperty('massFlowRate', streamProperties.massFlowRate)} />
+        </div>
+        <div class="property-item">
+          <label>Composition (JSON):</label>
+          <textarea bind:value={JSON.stringify(streamProperties.composition)} on:input={() => {
+            try {
+              streamProperties.composition = JSON.parse(event.target.value)
+              updateStreamProperty('composition', streamProperties.composition)
+            } catch (e) {
+              // Invalid JSON, ignore
+            }
+          }}></textarea>
+        </div>
+      </div>
+    </div>
+  {:else if selectedNode}
     <div class="properties">
       <div class="property-group">
         <h4>General</h4>
@@ -140,7 +190,7 @@
     </div>
   {:else}
     <div class="no-selection">
-      Select a unit operation to view its properties
+      Select a unit operation or stream to view its properties
     </div>
   {/if}
 </div>

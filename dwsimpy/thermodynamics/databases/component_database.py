@@ -30,6 +30,14 @@ class ComponentDatabase:
             's_ref': 69.95,  # J/mol/K
             'viscosity': 0.001,  # Pa·s at 298K
             'thermal_conductivity': 0.6,  # W/m·K at 298K
+            # Transport property correlation parameters
+            'viscosity_sutherland_C': 1064.0,  # Sutherland constant for water vapor (K)
+            'viscosity_sutherland_mu0': 1.716e-5,  # Reference viscosity (Pa·s)
+            'viscosity_sutherland_T0': 273.15,  # Reference temperature (K)
+            'viscosity_andrade_A': 0.02939,  # Andrade constant for liquid water
+            'viscosity_andrade_B': 507.8,  # Andrade constant for liquid water
+            'thermal_conductivity_eucken_A': 0.002,  # Eucken correlation constant
+            'thermal_conductivity_missenard_A': 0.000088,  # Missenard correlation for liquid
             'vapor_pressure_func': self._antoine_water
         }
 
@@ -48,6 +56,11 @@ class ComponentDatabase:
             's_ref': 186.25,
             'viscosity': 0.000011,  # Pa·s at 298K (gas)
             'thermal_conductivity': 0.034,  # W/m·K at 298K (gas)
+            # Transport property correlation parameters
+            'viscosity_sutherland_C': 140.0,  # Sutherland constant for methane (K)
+            'viscosity_sutherland_mu0': 1.087e-5,  # Reference viscosity (Pa·s)
+            'viscosity_sutherland_T0': 273.15,  # Reference temperature (K)
+            'thermal_conductivity_eucken_A': 0.001,  # Eucken correlation constant
             'vapor_pressure_func': self._antoine_methane
         }
 
@@ -64,6 +77,13 @@ class ComponentDatabase:
             't_ref': 298.15,
             'h_formation': -83800,
             's_ref': 229.6,
+            'viscosity': 0.000009,  # Pa·s at 298K (gas)
+            'thermal_conductivity': 0.021,  # W/m·K at 298K (gas)
+            # Transport property correlation parameters
+            'viscosity_sutherland_C': 215.0,  # Sutherland constant for ethane (K)
+            'viscosity_sutherland_mu0': 8.8e-6,  # Reference viscosity (Pa·s)
+            'viscosity_sutherland_T0': 273.15,  # Reference temperature (K)
+            'thermal_conductivity_eucken_A': 0.001,  # Eucken correlation constant
             'vapor_pressure_func': self._antoine_ethane
         }
 

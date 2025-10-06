@@ -73,12 +73,6 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
 
     def add_component(self, component: Dict[str, Any]) -> None:
         """Add a component to the package"""
-        # Validate required properties for PR EOS
-        required_props = ['critical_temperature', 'critical_pressure', 'acentric_factor']
-        for prop in required_props:
-            if prop not in component:
-                raise ValueError(f"Component {component.get('id', 'unknown')} missing required property: {prop}")
-
         # Get additional properties from database if available
         comp_id = component.get('id')
         if comp_id and comp_id in self.component_database._components:
@@ -86,9 +80,15 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
             # Merge database properties with provided component data
             merged_comp = db_comp.copy()
             merged_comp.update(component)
-            self._components.append(merged_comp)
-        else:
-            self._components.append(component)
+            component = merged_comp
+
+        # Validate required properties for PR EOS
+        required_props = ['critical_temperature', 'critical_pressure', 'acentric_factor']
+        for prop in required_props:
+            if prop not in component:
+                raise ValueError(f"Component {component.get('id', 'unknown')} missing required property: {prop}")
+
+        self._components.append(component)
 
     def calculate_properties(self, temperature: float, pressure: float,
                            composition: Dict[str, float]) -> Dict[str, float]:
@@ -131,235 +131,138 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
 
     def calculate_viscosity(self, temperature: float, pressure: float,
                            composition: Dict[str, float], phase: str = 'liquid') -> float:
-        """Calculate mixture viscosity using Chung et al. method for dense fluids"""
-        # Simplified implementation using ideal gas mixing rules
-        # For full implementation, would use Chung et al. correlation for dense fluids
-        total_viscosity = 0.0
-        for comp, mole_frac in composition.items():
-            if comp in self._components:
-                comp_data = self._components[comp]
-                # Use simple temperature dependence for gas viscosity
-                mu0 = comp_data.get('viscosity', 0.00001)  # Pa·s at reference temp
-                T0 = 298.15  # K
-                viscosity = mu0 * (temperature / T0) ** 0.7  # Simplified power law
-                total_viscosity += viscosity * mole_frac
-        return total_viscosity if total_viscosity > 0 else 0.00001
+        """Calculate mixture viscosity using proper correlations"""
+        if phase.lower() == 'gas' or phase.lower() == 'vapor':
+            return self._calculate_gas_viscosity(temperature, pressure, composition)
+        else:
+            return self._calculate_liquid_viscosity(temperature, pressure, composition)
 
     def calculate_thermal_conductivity(self, temperature: float, pressure: float,
                                       composition: Dict[str, float], phase: str = 'liquid') -> float:
-        """Calculate mixture thermal conductivity"""
-        # Simplified implementation using ideal gas mixing rules
-        # For full implementation, would use Stiel-Thodos or similar correlations
-        total_k = 0.0
-        for comp, mole_frac in composition.items():
-            if comp in self._components:
-                comp_data = self._components[comp]
-                # Use simple temperature dependence
-                k0 = comp_data.get('thermal_conductivity', 0.03)  # W/m·K at reference temp
-                T0 = 298.15  # K
-                conductivity = k0 * (temperature / T0) ** 0.8  # Simplified power law
-                total_k += conductivity * mole_frac
-        return total_k if total_k > 0 else 0.03
-
-    def _calculate_mixture_parameters(self, temperature: float,
-                                    composition: Dict[str, float]) -> Tuple[float, float]:
-        """Calculate mixture a and b parameters"""
-        a_mix = 0.0
-        b_mix = 0.0
-
-        # Calculate pure component parameters
-        a_i = {}
-        b_i = {}
-
-        for comp_id, mole_frac in composition.items():
-            tc = self.component_database.get_critical_temperature(comp_id)
-            pc = self.component_database.get_critical_pressure(comp_id)
-            omega = self.component_database.get_acentric_factor(comp_id)
-
-            # Calculate a and b for pure component
-            tr = temperature / tc
-            kappa = 0.37464 + 1.54226 * omega - 0.26992 * omega**2
-            alpha = (1 + kappa * (1 - math.sqrt(tr)))**2
-
-            a_i[comp_id] = 0.45724 * (self._r_gas**2 * tc**2 / pc) * alpha
-            b_i[comp_id] = 0.07780 * (self._r_gas * tc / pc)
-
-            b_mix += mole_frac * b_i[comp_id]
-
-        # Calculate mixture a using van der Waals mixing rules
-        for i in composition:
-            for j in composition:
-                a_ij = math.sqrt(a_i[i] * a_i[j])
-                # For simplicity, using k_ij = 0 (no binary interaction parameters)
-                a_mix += composition[i] * composition[j] * a_ij
-
-        return a_mix, b_mix
-
-    def _calculate_compressibility_factor(self, temperature: float, pressure: float,
-                                        a_mix: float, b_mix: float) -> float:
-        """Calculate compressibility factor using PR EOS"""
-        # PR EOS in terms of Z: Z³ - (1-B)Z² + (A-3B²-2B)Z - (AB-3B²-B³) = 0
-        # Where A = aP/(RT)², B = bP/(RT)
-
-        a = a_mix * pressure / (self._r_gas * temperature)**2
-        b = b_mix * pressure / (self._r_gas * temperature)
-
-        # Coefficients of cubic equation
-        coeff3 = 1.0
-        coeff2 = -(1 - b)
-        coeff1 = (a - 3*b**2 - 2*b)
-        coeff0 = -(a*b - 3*b**3 - b**3)
-
-        # Solve cubic equation
-        coeffs = [coeff3, coeff2, coeff1, coeff0]
-        roots = np.roots(coeffs)
-        real_roots = np.real(roots[np.isreal(roots)])
-
-        if len(real_roots) > 0:
-            # Return the largest real root (vapor-like)
-            return max(real_roots)
+        """Calculate mixture thermal conductivity using proper correlations"""
+        if phase.lower() == 'gas' or phase.lower() == 'vapor':
+            return self._calculate_gas_thermal_conductivity(temperature, pressure, composition)
         else:
-            # Fallback to ideal gas
-            return pressure / (self._r_gas * temperature / self._calculate_mw_avg(composition={}))
+            return self._calculate_liquid_thermal_conductivity(temperature, pressure, composition)
 
-    def _calculate_density(self, temperature: float, pressure: float, z: float,
-                          composition: Dict[str, float]) -> float:
-        """Calculate density"""
-        mw_avg = self._calculate_mw_avg(composition)
-        return (pressure * mw_avg) / (z * self._r_gas * temperature * 1000)  # kg/m³
-
-    def _calculate_fugacity_coefficients(self, temperature: float, pressure: float, z: float,
-                                       a_mix: float, b_mix: float,
-                                       composition: Dict[str, float]) -> Dict[str, float]:
-        """Calculate fugacity coefficients using PR EOS"""
-        r = self._r_gas
-        a = a_mix * pressure / (r * temperature)**2
-        b = b_mix * pressure / (r * temperature)
-
-        coeffs = {}
-
-        for comp_id, mole_frac in composition.items():
-            tc = self.component_database.get_critical_temperature(comp_id)
-            pc = self.component_database.get_critical_pressure(comp_id)
-            omega = self.component_database.get_acentric_factor(comp_id)
-            tr = temperature / tc
-            kappa = 0.37464 + 1.54226 * omega - 0.26992 * omega**2
-            alpha = (1 + kappa * (1 - math.sqrt(tr)))**2
-            a_i = 0.45724 * (r**2 * tc**2 / pc) * alpha
-            b_i = 0.07780 * (r * tc / pc)
-
-            # Fugacity coefficient calculation
-            term1 = (b_i / b_mix) * (z - 1) - math.log(z - b)
-            term2 = (a / (2 * math.sqrt(2) * b)) * (2 * (mole_frac * math.sqrt(a_i)) / a_mix - b_i / b_mix)
-            term3 = math.log((z + (1 + math.sqrt(2)) * b) / (z + (1 - math.sqrt(2)) * b))
-
-            ln_phi = term1 + term2 * term3
-            coeffs[comp_id] = math.exp(ln_phi)
-
-        return coeffs
-
-    def _pt_flash_pr(self, temperature: float, pressure: float,
-                    composition: Dict[str, float]) -> Dict[str, Any]:
-        """PT flash calculation using PR EOS with Rachford-Rice"""
-        try:
-            # Calculate fugacity coefficients
-            props = self.calculate_properties(temperature, pressure, composition)
-            phi = props['fugacity_coefficients']
-
-            # Calculate K-values from fugacity coefficients
-            k_values = {}
-            for comp_id in composition:
-                # For now, assume equal fugacity coefficients (simplified)
-                k_values[comp_id] = 1.0
-
-            # Solve Rachford-Rice equation for vapor fraction
-            vapor_fraction = self._solve_rachford_rice(k_values, composition)
-
-            # Calculate phase compositions
-            liquid_composition = {}
-            vapor_composition = {}
-
-            for comp_id in composition:
-                k = k_values[comp_id]
-                x_i = composition[comp_id] / (1 + vapor_fraction * (k - 1))
-                y_i = k * x_i
-                liquid_composition[comp_id] = x_i
-                vapor_composition[comp_id] = y_i
-
-            return {
-                'vapor_fraction': vapor_fraction,
-                'liquid_composition': liquid_composition,
-                'vapor_composition': vapor_composition,
-                'temperature': temperature,
-                'pressure': pressure,
-                'converged': True,
-                'k_values': k_values
-            }
-
-        except Exception as e:
-            # Fallback to single phase
-            return {
-                'vapor_fraction': 0.0,
-                'liquid_composition': composition.copy(),
-                'vapor_composition': {comp: 0.0 for comp in composition},
-                'temperature': temperature,
-                'pressure': pressure,
-                'converged': False,
-                'error': str(e)
-            }
-
-    def _solve_rachford_rice(self, k_values: Dict[str, float],
-                           composition: Dict[str, float]) -> float:
-        """Solve Rachford-Rice equation for vapor fraction"""
-        def rachford_rice(v):
-            return sum((k_values[comp] - 1) * composition[comp] / (1 + v * (k_values[comp] - 1))
-                      for comp in composition)
-
-        # Use bisection method
-        try:
-            from scipy.optimize import brentq
-            v = brentq(rachford_rice, 0.001, 0.999)
-            return v
-        except:
-            # Fallback
-            return 0.5
-
-    def _calculate_mw_avg(self, composition: Dict[str, float]) -> float:
-        """Calculate average molecular weight"""
+    def _calculate_gas_viscosity(self, temperature: float, pressure: float,
+                                composition: Dict[str, float]) -> float:
+        """Calculate gas mixture viscosity using Sutherland correlation"""
+        total_viscosity = 0.0
         total_mw = 0.0
-        for comp_id, mole_frac in composition.items():
-            comp = next((c for c in self._components if c.get('id') == comp_id), None)
-            if comp:
-                mw = comp.get('molecular_weight', 28.97)
-                total_mw += mole_frac * mw
-        return total_mw
 
-    def _calculate_ideal_gas_enthalpy(self, temperature: float, composition: Dict[str, float]) -> float:
-        """Calculate ideal gas enthalpy (simplified)"""
-        total_enthalpy = 0.0
         for comp_id, mole_frac in composition.items():
-            comp = next((c for c in self._components if c.get('id') == comp_id), None)
-            if comp:
-                cp = comp.get('cp', 36.0)
-                t_ref = comp.get('t_ref', 298.15)
-                h_formation = comp.get('h_formation', 0.0)
-                total_enthalpy += mole_frac * (h_formation + cp * (temperature - t_ref))
-        return total_enthalpy
+            if comp_id in self.component_database._components:
+                comp_data = self.component_database._components[comp_id]
 
-    def _calculate_ideal_gas_entropy(self, temperature: float, pressure: float,
+                # Sutherland correlation: μ = μ0 * (T/T0)^(3/2) * (T0 + C)/(T + C)
+                mu0 = comp_data.get('viscosity_sutherland_mu0', comp_data.get('viscosity', 1e-5))
+                T0 = comp_data.get('viscosity_sutherland_T0', 273.15)
+                C = comp_data.get('viscosity_sutherland_C', 100.0)
+
+                viscosity = mu0 * (temperature / T0)**(3/2) * (T0 + C) / (temperature + C)
+                mw = comp_data.get('molecular_weight', 28.97)
+
+                total_viscosity += mole_frac * viscosity * math.sqrt(mw)
+                total_mw += mole_frac * math.sqrt(mw)
+
+        if total_mw > 0:
+            # Herning-Zipperer mixing rule for gas mixtures
+            return (total_viscosity / total_mw)**2
+        else:
+            return 1e-5
+
+    def _calculate_liquid_viscosity(self, temperature: float, pressure: float,
                                    composition: Dict[str, float]) -> float:
-        """Calculate ideal gas entropy (simplified)"""
-        total_entropy = 0.0
-        p_ref = 101325
+        """Calculate liquid mixture viscosity using Andrade correlation"""
+        total_viscosity = 0.0
+
         for comp_id, mole_frac in composition.items():
-            comp = next((c for c in self._components if c.get('id') == comp_id), None)
-            if comp:
-                cp = comp.get('cp', 36.0)
-                t_ref = comp.get('t_ref', 298.15)
-                s_ref = comp.get('s_ref', 0.0)
-                entropy = mole_frac * (s_ref + cp * math.log(temperature/t_ref) - self._r_gas * math.log(pressure/p_ref))
-                total_entropy += entropy
-        return total_entropy
+            if comp_id in self.component_database._components:
+                comp_data = self.component_database._components[comp_id]
+
+                # Andrade correlation: μ = A * exp(B/T)
+                A = comp_data.get('viscosity_andrade_A', 0.001)
+                B = comp_data.get('viscosity_andrade_B', 1000.0)
+
+                viscosity = A * math.exp(B / temperature)
+
+                # Apply pressure correction (simplified)
+                pressure_correction = 1.0 + 1e-9 * (pressure - 101325)
+                viscosity *= pressure_correction
+
+                total_viscosity += mole_frac / viscosity
+
+        if total_viscosity > 0:
+            # Harmonic mean for liquid mixtures
+            return 1.0 / total_viscosity
+        else:
+            return 0.001
+
+    def _calculate_gas_thermal_conductivity(self, temperature: float, pressure: float,
+                                           composition: Dict[str, float]) -> float:
+        """Calculate gas mixture thermal conductivity using Eucken correlation"""
+        total_k = 0.0
+        total_mw = 0.0
+
+        for comp_id, mole_frac in composition.items():
+            if comp_id in self.component_database._components:
+                comp_data = self.component_database._components[comp_id]
+
+                # Eucken correlation: k = (Cp + 1.25*R/MW) * μ
+                cp = comp_data.get('cp', 36.0)  # J/mol/K
+                mw = comp_data.get('molecular_weight', 28.97)
+                r_gas = 8.314  # J/mol/K
+
+                # Get viscosity first
+                viscosity = self._calculate_pure_gas_viscosity(comp_id, temperature)
+
+                # Eucken correlation
+                conductivity = (cp + 1.25 * r_gas / mw) * viscosity / 1000  # Convert to W/m·K
+
+                total_k += mole_frac * conductivity * math.sqrt(mw)
+                total_mw += mole_frac * math.sqrt(mw)
+
+        if total_mw > 0:
+            # Wassiljewa mixing rule
+            return total_k / total_mw
+        else:
+            return 0.03
+
+    def _calculate_liquid_thermal_conductivity(self, temperature: float, pressure: float,
+                                              composition: Dict[str, float]) -> float:
+        """Calculate liquid mixture thermal conductivity using Missenard correlation"""
+        total_k = 0.0
+
+        for comp_id, mole_frac in composition.items():
+            if comp_id in self.component_database._components:
+                comp_data = self.component_database._components[comp_id]
+
+                # Missenard correlation: k = A * (Cp * MW)^(1/3) * ρ^(4/3) / T^(1/3)
+                # Simplified version using reference values
+                A = comp_data.get('thermal_conductivity_missenard_A', 0.000088)
+                k_ref = comp_data.get('thermal_conductivity', 0.6)
+                T_ref = 298.15
+
+                # Temperature correction
+                conductivity = k_ref * (temperature / T_ref)**(-1/3)
+
+                total_k += mole_frac * conductivity
+
+        return total_k if total_k > 0 else 0.6
+
+    def _calculate_pure_gas_viscosity(self, comp_id: str, temperature: float) -> float:
+        """Calculate pure gas viscosity using Sutherland correlation"""
+        if comp_id in self.component_database._components:
+            comp_data = self.component_database._components[comp_id]
+
+            mu0 = comp_data.get('viscosity_sutherland_mu0', comp_data.get('viscosity', 1e-5))
+            T0 = comp_data.get('viscosity_sutherland_T0', 273.15)
+            C = comp_data.get('viscosity_sutherland_C', 100.0)
+
+            return mu0 * (temperature / T0)**(3/2) * (T0 + C) / (temperature + C)
+        else:
+            return 1e-5
 
     def calculate_flash(self, temperature: float, pressure: float,
                        composition: Dict[str, float], flash_type: str) -> Dict[str, Any]:
@@ -393,7 +296,7 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
         """Calculate density using PR EOS."""
         composition = dict(zip(components, mole_fractions))
         a_mix, b_mix = self._calculate_mixture_parameters(temperature, composition)
-        z = self._calculate_compressibility_factor(a_mix, b_mix, temperature, pressure)
+        z = self._calculate_compressibility_factor(temperature, pressure, a_mix, b_mix)
         r = 0.0821  # Gas constant
 
         molar_volume = z * r * temperature / pressure
@@ -497,3 +400,62 @@ class PengRobinsonPropertyPackage(IPropertyPackage):
             v = v_new
 
         return v
+
+    def _calculate_mixture_parameters(self, temperature: float, composition: Dict[str, float]) -> Tuple[float, float]:
+        """Calculate mixture a and b parameters"""
+        a_mix = 0.0
+        b_mix = 0.0
+
+        # Calculate pure component parameters
+        a_i = {}
+        b_i = {}
+
+        for comp_id, mole_frac in composition.items():
+            tc = self.component_database.get_critical_temperature(comp_id)
+            pc = self.component_database.get_critical_pressure(comp_id)
+            omega = self.component_database.get_acentric_factor(comp_id)
+
+            # Calculate a and b for pure component
+            tr = temperature / tc
+            kappa = 0.37464 + 1.54226 * omega - 0.26992 * omega**2
+            alpha = (1 + kappa * (1 - math.sqrt(tr)))**2
+
+            a_i[comp_id] = 0.45724 * (self._r_gas**2 * tc**2 / pc) * alpha
+            b_i[comp_id] = 0.07780 * (self._r_gas * tc / pc)
+
+            b_mix += mole_frac * b_i[comp_id]
+
+        # Calculate mixture a using van der Waals mixing rules
+        for i in composition:
+            for j in composition:
+                a_ij = math.sqrt(a_i[i] * a_i[j])
+                # For simplicity, using k_ij = 0 (no binary interaction parameters)
+                a_mix += composition[i] * composition[j] * a_ij
+
+        return a_mix, b_mix
+
+    def _calculate_compressibility_factor(self, temperature: float, pressure: float, a_mix: float, b_mix: float) -> float:
+        """Calculate compressibility factor using PR EOS"""
+        # PR EOS in terms of Z: Z³ - (1-B)Z² + (A-3B²-2B)Z - (AB-3B²-B³) = 0
+        # Where A = aP/(RT)², B = bP/(RT)
+
+        a = a_mix * pressure / (self._r_gas * temperature)**2
+        b = b_mix * pressure / (self._r_gas * temperature)
+
+        # Coefficients of cubic equation
+        coeff3 = 1.0
+        coeff2 = -(1 - b)
+        coeff1 = (a - 3*b**2 - 2*b)
+        coeff0 = -(a*b - 3*b**3 - b**3)
+
+        # Solve cubic equation
+        coeffs = [coeff3, coeff2, coeff1, coeff0]
+        roots = np.roots(coeffs)
+        real_roots = np.real(roots[np.isreal(roots)])
+
+        if len(real_roots) > 0:
+            # Return the largest real root (vapor-like)
+            return max(real_roots)
+        else:
+            # Fallback to ideal gas
+            return pressure / (self._r_gas * temperature / self._calculate_mw_avg({}))
