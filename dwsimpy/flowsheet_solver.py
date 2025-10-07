@@ -41,29 +41,64 @@ class FlowsheetSolver(IFlowsheetSolver):
             unit_op.inlet_streams.clear()
             unit_op.outlet_streams.clear()
 
-        # Connect streams based on edges
+        # Helper to safely add a stream once
+        def ensure_stream(stream_id: str) -> MaterialStream:
+            if stream_id not in self.streams:
+                self.streams[stream_id] = MaterialStream(stream_id)
+            return self.streams[stream_id]
+
+        # Connect streams based on edges. Extended logic:
+        # - unit -> unit (existing): edge id (or generated) is the stream between them
+        # - stream -> unit: stream id is edge.source; attach as inlet to target
+        # - unit -> stream: stream id is edge.target; attach as outlet from source
         for edge in self.edges:
             source_id = edge.get('source')
             target_id = edge.get('target')
             source_handle = edge.get('sourceHandle', '')
             target_handle = edge.get('targetHandle', '')
 
+            # Case 1: unit -> unit
             if source_id in self.unit_operations and target_id in self.unit_operations:
-                source_unit = self.unit_operations[source_id]
-                target_unit = self.unit_operations[target_id]
                 stream_id = edge.get('id', f"stream_{source_id}_{target_id}")
-
-                # Get or create the stream
-                if stream_id not in self.streams:
-                    self.streams[stream_id] = MaterialStream(stream_id)
-
-                stream = self.streams[stream_id]
-
-                # Connect based on handle types
+                stream = ensure_stream(stream_id)
                 if 'output' in source_handle:
-                    source_unit.add_outlet_stream(stream)
+                    if stream not in self.unit_operations[source_id].outlet_streams:
+                        self.unit_operations[source_id].add_outlet_stream(stream)
                 if 'input' in target_handle:
-                    target_unit.add_inlet_stream(stream)
+                    if stream not in self.unit_operations[target_id].inlet_streams:
+                        self.unit_operations[target_id].add_inlet_stream(stream)
+                continue
+
+            # Case 2: stream -> unit (source is a stream id, target is unit)
+            if source_id in self.streams and target_id in self.unit_operations:
+                stream = ensure_stream(source_id)
+                if stream not in self.unit_operations[target_id].inlet_streams:
+                    self.unit_operations[target_id].add_inlet_stream(stream)
+                continue
+
+            # Case 3: unit -> stream (source is unit, target is existing or new stream id)
+            if source_id in self.unit_operations and target_id not in self.unit_operations:
+                stream = ensure_stream(target_id)
+                if stream not in self.unit_operations[source_id].outlet_streams:
+                    self.unit_operations[source_id].add_outlet_stream(stream)
+                continue
+
+            # Case 4: stream -> stream edges are ignored (no unit connectivity)
+            # They can be used later for stream mapping if needed.
+
+            # Post-processing: enforce mixer outlet rule (exactly 1 outlet stream)
+            for unit in self.unit_operations.values():
+                # Identify mixers by class name (simple heuristic)
+                if type(unit).__name__.lower() == 'mixer':
+                    if len(unit.outlet_streams) == 0:
+                        # Create a synthetic outlet stream if none defined
+                        synthetic_id = f"{unit.id}_out"
+                        stream = ensure_stream(synthetic_id)
+                        unit.add_outlet_stream(stream)
+                    elif len(unit.outlet_streams) > 1:
+                        # Collapse to first outlet stream, drop extras (they remain in global streams but not attached)
+                        primary = unit.outlet_streams[0]
+                        unit.outlet_streams = [primary]
 
     def solve_flowsheet(self, flowsheet: Any) -> List[Exception]:
         """Solve the flowsheet using sequential modular approach"""
@@ -199,10 +234,16 @@ class FlowsheetSolver(IFlowsheetSolver):
         streams = []
         property_packages = property_packages or {}
         for stream_data in data.get('streams', []):
-            # Get property package for this stream
-            pp_type = stream_data.get('property_package_type')
-            pp = property_packages.get(pp_type) if pp_type else None
-            stream = MaterialStream.from_dict(stream_data, pp)
+            stream_type = stream_data.get('type', 'material_stream')
+            if stream_type == 'energy_stream':
+                from .energy_stream import EnergyStream
+                stream = EnergyStream.from_dict(stream_data)
+            else:
+                # Get property package for this stream
+                pp_type = stream_data.get('property_package_type')
+                pp = property_packages.get(pp_type) if pp_type else None
+                from .material_stream import MaterialStream
+                stream = MaterialStream.from_dict(stream_data, pp)
             streams.append(stream)
         
         # Load flowsheet
@@ -224,3 +265,18 @@ class FlowsheetSolver(IFlowsheetSolver):
         with open(filepath, 'r') as f:
             data = json.load(f)
         return cls.from_dict(data, property_packages)
+
+    def add_unit_operation(self, unit_operation: IUnitOperation) -> None:
+        """Add a single unit operation to the flowsheet"""
+        self.unit_operations[unit_operation.id] = unit_operation
+
+    def add_stream(self, stream: MaterialStream) -> None:
+        """Add a single stream to the flowsheet"""
+        self.streams[stream.id] = stream
+
+    def add_edge(self, edge: Dict) -> None:
+        """Add a single edge to the flowsheet"""
+        if not hasattr(self, 'edges'):
+            self.edges = []
+        self.edges.append(edge)
+        self._connect_streams()

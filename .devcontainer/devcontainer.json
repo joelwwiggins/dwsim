@@ -1,6 +1,10 @@
 {
     "name": "DWSIM Python Dev Container",
-    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "dockerFile": "../Dockerfile",
+    "forwardPorts": [
+        8000,
+        5173
+    ],
     "features": {
         "ghcr.io/devcontainers/features/desktop-lite:1.0": {
             "password": "vscode"
@@ -21,6 +25,8 @@
     "containerEnv": {
         "DISPLAY": "${localEnv:DISPLAY}"
     },
-    "runArgs": ["--privileged"],
+    "runArgs": [
+        "--privileged"
+    ],
     "postCreateCommand": "pip install -r dwsimpy/requirements.txt && pip install -e dwsimpy"
 }

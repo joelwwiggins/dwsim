@@ -7,7 +7,7 @@ Hybrid State: Some files (e.g., PythonScriptUO.vb) show .NET code calling Python
 Key Observations:
 The active file (base_class.py) is a solid Python port of the base simulation object class, including properties, methods, and abstract methods. It handles extras like dynamic properties and validation.
 Interfaces like IFlowsheet are converted, but implementations (e.g., full flowsheet solvers) are not.
-UI is largely unconverted: Classic UI (VB.NET) and Cross-Platform UI (C#) dominate, with only basic Python UI stubs (e.g., app.py using Streamlit).
+UI is largely unconverted: Classic UI (VB.NET) and Cross-Platform UI (C#) dominate, with only basic Python UI stubs (e.g., web UI using SvelteKit).
 Dependencies: .NET relies on libraries like OxyPlot, IronPython, and Windows-specific APIs. Python equivalents (e.g., Matplotlib, NumPy) are partially integrated but not fully tested.
 Testing: No evidence of comprehensive Python tests; .NET has unit tests (e.g., DWSIM.Automation.Tests).
 Performance: .NET uses SIMD/extensions; Python needs optimizations (e.g., NumPy for numerics).
@@ -35,7 +35,7 @@ Incomplete: No Python equivalent for iterative solvers, dynamics integration, or
 Impact: High – without solvers, simulations can't run.
 
 ### User Interface (UI)
-Status: Largely unconverted. Classic UI (VB.NET, e.g., Forms) and Cross-Platform UI (C#, e.g., DWSIM.UI.Desktop) dominate. Python has minimal UI (Streamlit in app.py).
+Status: Largely unconverted. Classic UI (VB.NET, e.g., Forms) and Cross-Platform UI (C#, e.g., DWSIM.UI.Desktop) dominate. Python has minimal UI (web UI using SvelteKit).
 Incomplete: No Python equivalents for forms, editors, inspectors, or dock panels. Excerpts show complex .NET UI logic (e.g., loading flowsheets, displaying reports).
 Impact: High – UI is user-facing; Python needs full web/desktop interfaces.
 

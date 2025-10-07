@@ -7,11 +7,25 @@ name = "dwsimpy"
 version = "0.1.0"
 description = "DWSIM Python"
 dependencies = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
     "numpy>=1.21.0",
     "scipy>=1.7.0",
     "matplotlib>=3.5.0",
-    "streamlit>=1.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "pydantic>=2.0.0",
 ]
 
 [tool.setuptools.packages.find]
 include = ["*"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers --disable-warnings"
+testpaths = [
+    "tests",
+]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"

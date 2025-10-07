@@ -1,84 +1,66 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { SvelteFlow, Controls, Background, MiniMap } from '@xyflow/svelte';
-	import UnitPalette from '../lib/UnitPalette.svelte';
-	import PropertyPanel from '../lib/PropertyPanel.svelte';
-	import StreamDialog from '../lib/StreamDialog.svelte';
-	import ResultsPanel from '../lib/ResultsPanel.svelte';
-	import { HeaterEditor, PumpEditor, ValveEditor, HeatExchangerEditor, PipeEditor, EquilibriumReactorEditor, ConversionReactorEditor, DistillationColumnEditor, type HeaterData, type PumpData, type ValveData, type DistillationColumnData, type ConversionReactorData, type EquilibriumReactorData, type HeatExchangerData } from '../lib/unit-editors';
-	import type { Node, Edge } from '@xyflow/svelte';
+	import type { Edge, Node } from "@xyflow/svelte";
+	import { Background, Controls, MiniMap, SvelteFlow } from "@xyflow/svelte";
+	import { onMount } from "svelte";
+	import PropertyPanel from "../lib/PropertyPanel.svelte";
+	import ResultsPanel from "../lib/ResultsPanel.svelte";
+	import StreamDialog from "../lib/StreamDialog.svelte";
+	import UnitPalette from "../lib/UnitPalette.svelte";
+	import { startConnectionPolling } from "../lib/api/client";
+	import { unitTypes } from "../lib/constants/unitTypes";
+	import {
+		addStreamNode,
+		edges,
+		nodes,
+		runSimulation,
+		simulationResults,
+	} from "../lib/stores/flowsheet";
+	import {
+		ConversionReactorEditor,
+		DistillationColumnEditor,
+		EquilibriumReactorEditor,
+		HeaterEditor,
+		HeatExchangerEditor,
+		PumpEditor,
+		ValveEditor,
+		type ConversionReactorData,
+		type DistillationColumnData,
+		type EquilibriumReactorData,
+		type HeaterData,
+		type HeatExchangerData,
+		type PumpData,
+		type ValveData,
+	} from "../lib/unit-editors";
 
-	// Backend API configuration
-	let API_BASE = $state('http://localhost:8000/api');
-
-	// Set API base on mount (client-side only)
-	onMount(() => {
-		API_BASE = `http://${window.location.hostname}:8000/api`;
-	});
-
-	interface UnitData extends Record<string, unknown> {
-		label: string;
-		unitType: string;
-		icon: string;
-		properties: Record<string, any>;
-	}
-
-	interface StreamData extends Record<string, unknown> {
-		id: string;
-		name?: string;
-		temperature?: number;
-		pressure?: number;
-		mass_flow_rate?: number;
-		composition?: Record<string, number>;
-	}
-
-	let nodes: Node<UnitData | StreamData>[] = $state([]);
-	let edges: Edge[] = $state([]);
+	// Local UI state (editors, selection, tabs)
 	let selectedNodeId: string | null = $state(null);
 	let showStreamDialog: boolean = $state(false);
-	let selectedStream: Node<StreamData> | null = $state(null);
-	let simulationResults: any = $state(null);
+	let selectedStream: any = $state(null);
 	let showResultsPanel: boolean = $state(false);
 
-	// Unit editor states
-	let showHeaterEditor: boolean = $state(false);
-	let showPumpEditor: boolean = $state(false);
-	let showValveEditor: boolean = $state(false);
-	let showDistillationColumnEditor: boolean = $state(false);
-	let showConversionReactorEditor: boolean = $state(false);
-	let showEquilibriumReactorEditor: boolean = $state(false);
-	let showHeatExchangerEditor: boolean = $state(false);
-	let showPipeEditor: boolean = $state(false);
-	let selectedUnitData: HeaterData | PumpData | ValveData | DistillationColumnData | ConversionReactorData | EquilibriumReactorData | HeatExchangerData | null = $state(null);
+	let showHeaterEditor = $state(false);
+	let showPumpEditor = $state(false);
+	let showValveEditor = $state(false);
+	let showDistillationColumnEditor = $state(false);
+	let showConversionReactorEditor = $state(false);
+	let showEquilibriumReactorEditor = $state(false);
+	let showHeatExchangerEditor = $state(false);
+	let showPipeEditor = $state(false);
+	let selectedUnitData:
+		| HeaterData
+		| PumpData
+		| ValveData
+		| DistillationColumnData
+		| ConversionReactorData
+		| EquilibriumReactorData
+		| HeatExchangerData
+		| null = $state(null);
 
-	// Active tab state
-	let activeTab = $state('Flowsheet');
+	let activeTab = $state("Flowsheet");
 
-	// Unit operation types available
-	const unitTypes = [
-		{ id: 'mixer', name: 'Mixer', icon: '🔄' },
-		{ id: 'heater', name: 'Heater', icon: '🔥' },
-		{ id: 'cooler', name: 'Cooler', icon: '❄️' },
-		{ id: 'valve', name: 'Valve', icon: '⚙️' },
-		{ id: 'pump', name: 'Pump', icon: '💧' },
-		{ id: 'splitter', name: 'Splitter', icon: '↗️' },
-		{ id: 'tank', name: 'Tank', icon: '🛢️' },
-		{ id: 'compressor', name: 'Compressor', icon: '🗜️' },
-		{ id: 'expander', name: 'Expander', icon: '📈' },
-		{ id: 'pipe', name: 'Pipe', icon: '📏' },
-		{ id: 'heat_exchanger', name: 'Heat Exchanger', icon: '🔄' },
-		{ id: 'pipe', name: 'Pipe', icon: '📏' },
-		{ id: 'heat_exchanger', name: 'Heat Exchanger', icon: '🔄' },
-		{ id: 'equilibrium_reactor', name: 'Equilibrium Reactor', icon: '⚗️' },
-		{ id: 'conversion_reactor', name: 'Conversion Reactor', icon: '⚗️' },
-		{ id: 'distillation_column', name: 'Distillation Column', icon: '🏭' },
-		{ id: 'pipe', name: 'Pipe', icon: '📏' },
-		{ id: 'vessel', name: 'Vessel', icon: '🏭' },
-		{ id: 'component_separator', name: 'Component Separator', icon: '⚗️' },
-		{ id: 'filter', name: 'Filter', icon: '🔍' },
-		{ id: 'orifice_plate', name: 'Orifice Plate', icon: '⭕' },
-		{ id: 'relief_valve', name: 'Relief Valve', icon: '🚨' }
-	];
+	onMount(() => {
+		startConnectionPolling();
+	});
 
 	function onNodeClick(event: any) {
 		const clickedNode = event.detail.node;
@@ -92,16 +74,19 @@
 
 		// If it's a unit operation, open the appropriate editor
 		const unitType = clickedNode.data.unitType;
-		selectedUnitData = clickedNode.data as HeaterData | PumpData | ValveData;
+		selectedUnitData = clickedNode.data as
+			| HeaterData
+			| PumpData
+			| ValveData;
 
 		switch (unitType) {
-			case 'heater':
+			case "heater":
 				showHeaterEditor = true;
 				break;
-			case 'pump':
+			case "pump":
 				showPumpEditor = true;
 				break;
-			case 'valve':
+			case "valve":
 				showValveEditor = true;
 				break;
 			default:
@@ -118,48 +103,43 @@
 		const newEdge = {
 			...event.detail.edge,
 			id: `edge_${event.detail.edge.source}_${event.detail.edge.target}`,
-			type: 'default'
+			type: "default",
 		};
-		edges = [...edges, newEdge];
-
-		// Create a stream node for this connection
+		// update edges store
+		edges.update((list) => [...list, newEdge]);
 		createStreamForEdge(newEdge);
 	}
 
 	function createStreamForEdge(edge: Edge) {
 		const streamId = `stream_${edge.source}_${edge.target}`;
-		const existingStream = nodes.find(node => node.id === streamId);
-
-		if (!existingStream) {
-			const sourceNode = nodes.find(node => node.id === edge.source);
-			const targetNode = nodes.find(node => node.id === edge.target);
-
-			if (sourceNode && targetNode) {
-				// Position stream node between source and target
-				const streamPosition = {
-					x: (sourceNode.position.x + targetNode.position.x) / 2,
-					y: (sourceNode.position.y + targetNode.position.y) / 2
-				};
-
-				const streamNode: Node<StreamData> = {
+		let currentNodes: any[];
+		nodes.subscribe((v) => (currentNodes = v))();
+		if (currentNodes.find((n) => n.id === streamId)) return;
+		const sourceNode = currentNodes.find((n) => n.id === edge.source);
+		const targetNode = currentNodes.find((n) => n.id === edge.target);
+		if (!(sourceNode && targetNode)) return;
+		const streamPosition = {
+			x: (sourceNode.position.x + targetNode.position.x) / 2,
+			y: (sourceNode.position.y + targetNode.position.y) / 2,
+		};
+		nodes.update((list) => [
+			...list,
+			{
+				id: streamId,
+				type: "default",
+				position: streamPosition,
+				class: "stream-node",
+				data: {
+					label: `🌊 ${streamId}`,
 					id: streamId,
-					type: 'default',
-					position: streamPosition,
-					class: 'stream-node',
-					data: {
-						label: `🌊 ${streamId}`,
-						id: streamId,
-						name: `Stream ${streamId}`,
-						temperature: 298.15,
-						pressure: 101325,
-						mass_flow_rate: 1.0,
-						composition: { water: 1.0 }
-					}
-				};
-
-				nodes = [...nodes, streamNode];
-			}
-		}
+					name: `Stream ${streamId}`,
+					temperature: 298.15,
+					pressure: 101325,
+					mass_flow_rate: 1.0,
+					composition: { water: 1.0 },
+				},
+			},
+		]);
 	}
 
 	function openStreamDialog(stream: Node<StreamData>) {
@@ -175,16 +155,16 @@
 	function saveStreamData(streamData: StreamData) {
 		if (selectedStream) {
 			selectedStream.data = { ...selectedStream.data, ...streamData };
-			nodes = [...nodes]; // Trigger reactivity
+			nodes.update((n) => n); // Trigger reactivity
 		}
 	}
 
 	function saveHeaterData(unitData: HeaterData) {
 		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
+			const node = nodes.find((n) => n.id === selectedNodeId);
 			if (node) {
 				node.data = { ...node.data, ...unitData };
-				nodes = [...nodes]; // Trigger reactivity
+				nodes.update((n) => n); // Trigger reactivity
 			}
 		}
 		showHeaterEditor = false;
@@ -192,10 +172,10 @@
 
 	function savePumpData(unitData: PumpData) {
 		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
+			const node = nodes.find((n) => n.id === selectedNodeId);
 			if (node) {
 				node.data = { ...node.data, ...unitData };
-				nodes = [...nodes]; // Trigger reactivity
+				nodes.update((n) => n); // Trigger reactivity
 			}
 		}
 		showPumpEditor = false;
@@ -203,343 +183,85 @@
 
 	function saveValveData(unitData: ValveData) {
 		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
+			const node = nodes.find((n) => n.id === selectedNodeId);
 			if (node) {
 				node.data = { ...node.data, ...unitData };
-				nodes = [...nodes]; // Trigger reactivity
+				nodes.update((n) => n);
 			}
 		}
 		showValveEditor = false;
 	}
+
 	function saveDistillationColumnData(unitData: DistillationColumnData) {
 		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
+			const node = nodes.find((n) => n.id === selectedNodeId);
 			if (node) {
 				node.data = { ...node.data, ...unitData };
-				nodes = [...nodes]; // Trigger reactivity
+				nodes.update((n) => n);
 			}
 		}
 		showDistillationColumnEditor = false;
+	}
+
 	function saveConversionReactorData(unitData: ConversionReactorData) {
 		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
+			const node = nodes.find((n) => n.id === selectedNodeId);
 			if (node) {
 				node.data = { ...node.data, ...unitData };
-	function saveEquilibriumReactorData(unitData: EquilibriumReactorData) {
-		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
-			if (node) {
-			node.data = { ...node.data, ...unitData };
-	function saveHeatExchangerData(unitData: HeatExchangerData) {
-		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
-			if (node) {
-			node.data = { ...node.data, ...unitData };
-	function savePipeData(unitData: PipeData) {
-		if (selectedNodeId) {
-			const node = nodes.find(n => n.id === selectedNodeId);
-			if (node) {
-			node.data = { ...node.data, ...unitData };
-			nodes = [...nodes]; // Trigger reactivity
-			}
-		}
-		showPipeEditor = false;
-	}
-			nodes = [...nodes]; // Trigger reactivity
-			}
-		}
-		showHeatExchangerEditor = false;
-	}
-			nodes = [...nodes]; // Trigger reactivity
-			}
-		}
-		showEquilibriumReactorEditor = false;
-	}
-				nodes = [...nodes]; // Trigger reactivity
+				nodes.update((n) => n);
 			}
 		}
 		showConversionReactorEditor = false;
 	}
-	}
 
-	// Toolbar actions
-	function newFlowsheet() {
-		nodes = [];
-		edges = [];
-		selectedNodeId = null;
-	}
-
-	function saveFlowsheet() {
-		const unitNodes = nodes.filter(node => node.data.unitType);
-		const streamNodes = nodes.filter(node => !node.data.unitType);
-
-		const flowsheetData = {
-			nodes: unitNodes.map(node => ({
-				id: node.id,
-				type: node.type,
-				position: node.position,
-				data: node.data
-			})),
-			edges: edges.map(edge => ({
-				id: edge.id,
-				source: edge.source,
-				target: edge.target,
-				sourceHandle: edge.sourceHandle,
-				targetHandle: edge.targetHandle
-			})),
-			streams: streamNodes.map(node => node.data)
-		};
-
-		// Prompt for filename
-		const filename = prompt('Enter flowsheet name:', 'my_flowsheet');
-		if (!filename) return;
-
-		// Send to backend
-		fetch(`${API_BASE}/flowsheet/save?filename=${encodeURIComponent(filename)}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(flowsheetData)
-		})
-		.then(response => response.json())
-		.then(result => {
-			if (result.success) {
-				alert(`Flowsheet saved as ${filename}`);
-			} else {
-				alert(`Failed to save flowsheet: ${result.message}`);
-			}
-		})
-		.catch(error => {
-			console.error('Save error:', error);
-			alert('Failed to save flowsheet');
-		});
-	}
-
-	async function loadFlowsheet() {
-		try {
-			// Get list of saved flowsheets
-			const listResponse = await fetch(`${API_BASE}/flowsheet/list`);
-			const listData = await listResponse.json();
-
-			if (listData.flowsheets.length === 0) {
-				alert('No saved flowsheets found');
-				return;
-			}
-
-			// Prompt user to select a flowsheet
-			const filename = prompt(`Available flowsheets:\n${listData.flowsheets.join('\n')}\n\nEnter flowsheet name to load:`, listData.flowsheets[0]);
-			if (!filename) return;
-
-			// Load the flowsheet
-			const loadResponse = await fetch(`${API_BASE}/flowsheet/load/${encodeURIComponent(filename)}`);
-			if (!loadResponse.ok) {
-				throw new Error(`Failed to load flowsheet: ${loadResponse.statusText}`);
-			}
-
-			const flowsheetData = await loadResponse.json();
-
-			// Clear current flowsheet
-			nodes = [];
-			edges = [];
-			selectedNodeId = null;
-
-			// Load nodes
-			const loadedNodes: Node<UnitData | StreamData>[] = [];
-
-			// Load unit nodes
-			if (flowsheetData.nodes) {
-				for (const nodeData of flowsheetData.nodes) {
-					loadedNodes.push({
-						id: nodeData.id,
-						type: nodeData.type || 'default',
-						position: nodeData.position,
-						data: nodeData.data
-					});
-				}
-			}
-
-			// Load stream nodes
-			if (flowsheetData.streams) {
-				for (const streamData of flowsheetData.streams) {
-					loadedNodes.push({
-						id: streamData.id,
-						type: 'default',
-						position: { x: 100, y: 100 }, // Default position, could be improved
-						data: streamData
-					});
-				}
-			}
-
-			nodes = loadedNodes;
-			edges = flowsheetData.edges || [];
-
-			alert(`Flowsheet "${filename}" loaded successfully!`);
-
-		} catch (error) {
-			console.error('Load error:', error);
-			alert(`Failed to load flowsheet: ${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-
-	async function runSimulation() {
-		try {
-			const unitNodes = nodes.filter(node => node.data.unitType);
-			const streamNodes = nodes.filter(node => !node.data.unitType);
-
-			const flowsheetData = {
-				nodes: unitNodes.map(node => ({
-					id: node.id,
-					type: node.type,
-					position: node.position,
-					data: node.data
-				})),
-				edges: edges.map(edge => ({
-					id: edge.id,
-					source: edge.source,
-					target: edge.target,
-					sourceHandle: edge.sourceHandle,
-					targetHandle: edge.targetHandle
-				})),
-				streams: streamNodes.map(node => node.data)
-			};
-
-			// Load flowsheet
-			const loadResponse = await fetch(`${API_BASE}/flowsheet/load`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(flowsheetData)
-			});
-
-			if (!loadResponse.ok) {
-				throw new Error('Failed to load flowsheet');
-			}
-
-			// Run simulation
-			const runResponse = await fetch(`${API_BASE}/simulation/run`, {
-				method: 'POST'
-			});
-
-			const result = await runResponse.json();
-			console.log('Simulation result:', result);
-
-			// Store results and show panel
-			simulationResults = result.results || result;
-			showResultsPanel = true;
-
-			if (result.success) {
-				alert('Simulation completed successfully!');
-			} else {
-				alert(`Simulation failed: ${result.message}`);
-			}
-		} catch (error) {
-			console.error('Simulation error:', error);
-			alert('Failed to run simulation');
-		}
-	}
-
-	// Get selected node data
-	let selectedNode = $derived(selectedNodeId ? nodes.find(node => node.id === selectedNodeId && node.data.unitType) as Node<UnitData> | null : null);
-
-	function ondragover(event: DragEvent) {
-		event.preventDefault();
-	}
-
-	function ondrop(event: DragEvent) {
-		event.preventDefault();
-
-		const unitType = event.dataTransfer?.getData('application/unit-type');
-		if (!unitType) return;
-
-		const rect = (event.target as HTMLElement).getBoundingClientRect();
-		const position = {
-			x: event.clientX - rect.left,
-			y: event.clientY - rect.top
-		};
-
-		const unitTypeData = unitTypes.find(type => type.id === unitType);
-		if (!unitTypeData) return;
-
-		const newNode: Node<UnitData> = {
-			id: `${unitType}_${Date.now()}`,
-			type: 'default',
-			position,
-			class: 'unit-node',
-			data: {
-				label: `${unitTypeData.icon} ${unitTypeData.name}`,
-				unitType,
-				icon: unitTypeData.icon,
-				properties: {}
-			}
-		};
-
-		nodes = [...nodes, newNode];
-	}
-
-	function toggleResultsPanel() {
-		showResultsPanel = !showResultsPanel;
-	}
-
-	function addStream() {
-		const streamId = `stream_${Date.now()}`;
-		const streamNode: Node<StreamData> = {
-			id: streamId,
-			type: 'default',
-			position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-			class: 'stream-node',
-			data: {
-				label: `🌊 ${streamId}`,
-				id: streamId,
-				name: `Stream ${streamId}`,
-				temperature: 298.15,
-				pressure: 101325,
-				mass_flow_rate: 1.0,
-				composition: { water: 1.0 }
-			}
-		};
-
-		nodes = [...nodes, streamNode];
-	}
-
-	// Tab switching functions
-	function switchTab(tabName: string) {
-		activeTab = tabName;
-	}
-
-	function openUnitEditor(unit: Node<UnitData>) {
-		selectedNodeId = unit.id;
-		selectedUnitData = { ...unit.data };
-
-		switch (unit.data.unitType) {
-			case 'heater':
-				showHeaterEditor = true;
-				break;
-			case 'pump':
-				showPumpEditor = true;
-				break;
-			case 'valve':
-				showValveEditor = true;
-				break;
-			default:
-				break;
-		}
-	}
-
-	function closeUnitEditor() {
-		showHeaterEditor = false;
-		showPumpEditor = false;
-		showValveEditor = false;
-		selectedUnitData = null;
-	}
-
-	function saveUnitData(updatedData: HeaterData | PumpData | ValveData) {
+	function saveEquilibriumReactorData(unitData: EquilibriumReactorData) {
 		if (selectedNodeId) {
-			const nodeIndex = nodes.findIndex(node => node.id === selectedNodeId);
-			if (nodeIndex !== -1) {
-				nodes[nodeIndex].data = { ...nodes[nodeIndex].data, ...updatedData };
-				nodes = [...nodes]; // Trigger reactivity
+			const node = nodes.find((n) => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+				nodes.update((n) => n);
 			}
 		}
+		showEquilibriumReactorEditor = false;
+	}
 
-		closeUnitEditor();
+	function saveHeatExchangerData(unitData: HeatExchangerData) {
+		if (selectedNodeId) {
+			const node = nodes.find((n) => n.id === selectedNodeId);
+			if (node) {
+				node.data = { ...node.data, ...unitData };
+				nodes.update((n) => n);
+			}
+		}
+		showHeatExchangerEditor = false;
+	}
+
+	// Derived selected node
+	let selectedNode = $derived(
+		nodes.find((n) => n.id === selectedNodeId) || null,
+	);
+
+	// Add a simple material stream
+	function addStream() {
+		addStreamNode();
+	}
+
+	function switchTab(tab: string) {
+		activeTab = tab;
+	}
+
+	function ondragover(e: DragEvent) {
+		e.preventDefault();
+	}
+	function ondrop(_e: DragEvent) {
+		/* Placeholder for future drag/drop logic */
+	}
+
+	async function runSimAndShow() {
+		await runSimulation();
+		let res: any;
+		simulationResults.subscribe((v) => (res = v))();
+		showResultsPanel = true;
 	}
 </script>
 
@@ -547,7 +269,9 @@
 	<!-- Title Bar -->
 	<div class="title-bar">
 		<span class="title">DWSIM — Process Simulation</span>
-		<span class="path">[C:\Users\user\source\repos\DWSIM-Web\bin\Debug\process_simulation.dwxml]</span>
+		<span class="path"
+			>[C:\Users\user\source\repos\DWSIM-Web\bin\Debug\process_simulation.dwxml]</span
+		>
 		<div class="window-controls">
 			<button title="Minimize">−</button>
 			<button title="Maximize">□</button>
@@ -597,14 +321,32 @@
 	<!-- Tab Bar -->
 	<div class="tab-bar">
 		<div class="tabs">
-			<button class={activeTab === 'Material Streams' ? 'active' : ''} onclick={() => switchTab('Material Streams')}>Material Streams</button>
-			<button class={activeTab === 'Spreadsheet' ? 'active' : ''} onclick={() => switchTab('Spreadsheet')}>Spreadsheet</button>
-			<button class={activeTab === 'Charts' ? 'active' : ''} onclick={() => switchTab('Charts')}>Charts</button>
-			<button class={activeTab === 'Settings' ? 'active' : ''} onclick={() => switchTab('Settings')}>Settings</button>
-			<button class={activeTab === 'Flowsheet' ? 'active' : ''} onclick={() => switchTab('Flowsheet')}>Flowsheet</button>
+			<button
+				class={activeTab === "Material Streams" ? "active" : ""}
+				onclick={() => switchTab("Material Streams")}
+				>Material Streams</button
+			>
+			<button
+				class={activeTab === "Spreadsheet" ? "active" : ""}
+				onclick={() => switchTab("Spreadsheet")}>Spreadsheet</button
+			>
+			<button
+				class={activeTab === "Charts" ? "active" : ""}
+				onclick={() => switchTab("Charts")}>Charts</button
+			>
+			<button
+				class={activeTab === "Settings" ? "active" : ""}
+				onclick={() => switchTab("Settings")}>Settings</button
+			>
+			<button
+				class={activeTab === "Flowsheet" ? "active" : ""}
+				onclick={() => switchTab("Flowsheet")}>Flowsheet</button
+			>
 		</div>
 		<div class="tab-actions">
-			<button title="Solve Flowsheet (F5)" onclick={runSimulation}>▶️</button>
+			<button title="Solve Flowsheet (F5)" onclick={runSimAndShow}
+				>▶️</button
+			>
 			<button title="Abort Solver (Pause)">⏸️</button>
 			<div class="search-box">
 				<input type="text" placeholder="Search..." />
@@ -619,11 +361,16 @@
 
 	<!-- Main Content Area -->
 	<div class="main-content">
-		{#if activeTab === 'Flowsheet'}
+		{#if activeTab === "Flowsheet"}
 			<div class="flowsheet-container">
 				<UnitPalette {unitTypes} onAddStream={addStream} />
 
-				<div class="flow-container" ondragover={ondragover} ondrop={ondrop} role="application">
+				<div
+					class="flow-container"
+					{ondragover}
+					{ondrop}
+					role="application"
+				>
 					<SvelteFlow
 						{nodes}
 						{edges}
@@ -637,34 +384,59 @@
 					</SvelteFlow>
 				</div>
 
-				<PropertyPanel selectedNode={selectedNode && !['heater', 'pump', 'valve'].includes(selectedNode.data.unitType) ? selectedNode : null} />
+				<PropertyPanel
+					selectedNode={selectedNode &&
+					!["heater", "pump", "valve"].includes(
+						selectedNode.data.unitType,
+					)
+						? selectedNode
+						: null}
+				/>
 			</div>
-		{:else if activeTab === 'Material Streams'}
+		{:else if activeTab === "Material Streams"}
 			<div class="tab-content">
 				<h2>Material Streams</h2>
 				<p>Material streams management interface would go here.</p>
 				<div class="streams-list">
-					{#each nodes.filter(node => !node.data.unitType) as stream}
-						<div class="stream-item" onclick={() => openStreamDialog(stream)} role="button" tabindex="0" onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStreamDialog(stream); } }} aria-label="Edit stream {stream.data.name || stream.id}">
+					{#each nodes.filter((node) => !node.data.unitType) as stream (stream.id)}
+						<div
+							class="stream-item"
+							onclick={() => openStreamDialog(stream)}
+							role="button"
+							tabindex="0"
+							onkeydown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									openStreamDialog(stream);
+								}
+							}}
+							aria-label="Edit stream {stream.data.name ||
+								stream.id}"
+						>
 							<strong>{stream.data.name || stream.id}</strong>
-							<span>T: {stream.data.temperature?.toFixed(1)} K</span>
-							<span>P: {stream.data.pressure?.toFixed(0)} Pa</span>
-							<span>Flow: {stream.data.mass_flow_rate?.toFixed(2)} kg/s</span>
+							<span
+								>T: {stream.data.temperature?.toFixed(1)} K</span
+							>
+							<span>P: {stream.data.pressure?.toFixed(0)} Pa</span
+							>
+							<span
+								>Flow: {stream.data.mass_flow_rate?.toFixed(2)} kg/s</span
+							>
 						</div>
 					{/each}
 				</div>
 			</div>
-		{:else if activeTab === 'Spreadsheet'}
+		{:else if activeTab === "Spreadsheet"}
 			<div class="tab-content">
 				<h2>Spreadsheet</h2>
 				<p>Spreadsheet interface for calculations would go here.</p>
 			</div>
-		{:else if activeTab === 'Charts'}
+		{:else if activeTab === "Charts"}
 			<div class="tab-content">
 				<h2>Charts</h2>
 				<p>Charts and visualization interface would go here.</p>
 			</div>
-		{:else if activeTab === 'Settings'}
+		{:else if activeTab === "Settings"}
 			<div class="tab-content">
 				<h2>Settings</h2>
 				<p>Application settings interface would go here.</p>
@@ -689,65 +461,60 @@
 	onSave={saveStreamData}
 />
 
-<ResultsPanel
-	results={simulationResults}
-	isVisible={showResultsPanel}
-/>
+<ResultsPanel results={simulationResults} isVisible={showResultsPanel} />
 
 <HeaterEditor
 	unit={selectedUnitData as HeaterData}
 	isOpen={showHeaterEditor}
-	onClose={() => showHeaterEditor = false}
+	onClose={() => (showHeaterEditor = false)}
 	onSave={saveHeaterData}
 />
 
 <PumpEditor
 	unit={selectedUnitData as PumpData}
 	isOpen={showPumpEditor}
-	onClose={() => showPumpEditor = false}
+	onClose={() => (showPumpEditor = false)}
 	onSave={savePumpData}
 />
 
-</ValveEditor>
+<ValveEditor
+	unit={selectedUnitData as ValveData}
+	isOpen={showValveEditor}
+	onClose={() => (showValveEditor = false)}
+	onSave={saveValveData}
+/>
 
 <HeatExchangerEditor
 	unit={selectedUnitData as HeatExchangerData}
 	isOpen={showHeatExchangerEditor}
-	onClose={() => showHeatExchangerEditor = false}
+	onClose={() => (showHeatExchangerEditor = false)}
 	onSave={saveHeatExchangerData}
 />
 
 <EquilibriumReactorEditor
 	unit={selectedUnitData as EquilibriumReactorData}
 	isOpen={showEquilibriumReactorEditor}
-	onClose={() => showEquilibriumReactorEditor = false}
+	onClose={() => (showEquilibriumReactorEditor = false)}
 	onSave={saveEquilibriumReactorData}
 />
 
 <ConversionReactorEditor
 	unit={selectedUnitData as ConversionReactorData}
 	isOpen={showConversionReactorEditor}
-	onClose={() => showConversionReactorEditor = false}
+	onClose={() => (showConversionReactorEditor = false)}
 	onSave={saveConversionReactorData}
 />
 
 <DistillationColumnEditor
 	unit={selectedUnitData as DistillationColumnData}
 	isOpen={showDistillationColumnEditor}
-	onClose={() => showDistillationColumnEditor = false}
+	onClose={() => (showDistillationColumnEditor = false)}
 	onSave={saveDistillationColumnData}
 />
 
 <style>
-	unit={selectedUnitData as ValveData}
-	isOpen={showValveEditor}
-	onClose={() => showValveEditor = false}
-	onSave={saveValveData}
-/>
-
-<style>
 	.dwsim-window {
-		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 		height: 100vh;
 		display: flex;
 		flex-direction: column;

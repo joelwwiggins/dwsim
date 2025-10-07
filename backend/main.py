@@ -35,7 +35,7 @@ app = FastAPI(title="DWSIM Python API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Svelte dev server
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://192.168.1.102:5173", "http://192.168.1.102:5174", "http://192.168.1.102:5175", "http://172.17.0.1:5173", "http://172.17.0.1:5174", "http://172.17.0.1:5175"],  # Svelte dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

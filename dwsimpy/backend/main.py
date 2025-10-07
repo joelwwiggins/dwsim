@@ -32,6 +32,7 @@ from dwsimpy.unit_ops.relief_valve import ReliefValve
 from dwsimpy.unit_operations.base_unit import BaseUnitOperation
 
 from dwsimpy.material_stream import MaterialStream
+from dwsimpy.energy_stream import EnergyStream
 from dwsimpy.factories import UnitOperationFactory
 from dwsimpy.property_packages.ideal_property_package import IdealPropertyPackage
 from dwsimpy.property_packages.peng_robinson_property_package import PengRobinsonPropertyPackage
@@ -41,7 +42,7 @@ app = FastAPI(title="DWSIM Python API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://172.17.0.3:5173", "http://172.17.0.3:5174"],  # Svelte dev server
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://172.17.0.3:5173", "http://172.17.0.3:5174", "http://192.168.1.102:5173", "http://192.168.1.102:5174"],  # Svelte dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -114,17 +115,29 @@ async def load_flowsheet(data: FlowsheetData):
         streams = []
         if data.streams:
             for stream_data in data.streams:
-                stream = MaterialStream(stream_data['id'], stream_data.get('name', stream_data['id']))
-                # Set properties if provided
-                if 'temperature' in stream_data:
-                    stream.temperature = stream_data['temperature']
-                if 'pressure' in stream_data:
-                    stream.pressure = stream_data['pressure']
-                if 'mass_flow_rate' in stream_data:
-                    stream.mass_flow_rate = stream_data['mass_flow_rate']
-                if 'composition' in stream_data:
-                    stream.composition = stream_data['composition']
-                stream.property_package = property_package
+                stream_type = stream_data.get('stream_type', 'material')
+                if stream_type == 'energy':
+                    stream = EnergyStream(stream_data['id'], stream_data.get('name', stream_data['id']))
+                    # Set energy-specific properties
+                    if 'energy_flow' in stream_data:
+                        stream.energy_flow = stream_data['energy_flow']
+                    if 'temperature_low' in stream_data:
+                        stream.temperature_low = stream_data['temperature_low']
+                    if 'temperature_high' in stream_data:
+                        stream.temperature_high = stream_data['temperature_high']
+                else:
+                    # Material stream
+                    stream = MaterialStream(stream_data['id'], stream_data.get('name', stream_data['id']))
+                    # Set properties if provided
+                    if 'temperature' in stream_data:
+                        stream.temperature = stream_data['temperature']
+                    if 'pressure' in stream_data:
+                        stream.pressure = stream_data['pressure']
+                    if 'mass_flow_rate' in stream_data:
+                        stream.mass_flow_rate = stream_data['mass_flow_rate']
+                    if 'composition' in stream_data:
+                        stream.composition = stream_data['composition']
+                    stream.property_package = property_package
                 streams.append(stream)
         else:
             for edge in data.edges:
@@ -295,7 +308,70 @@ async def list_saved_flowsheets():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list flowsheets: {str(e)}")
 
+@app.post("/api/flowsheet/add-object", response_model=SimulationResult)
+async def add_object_to_flowsheet(data: Dict[str, Any]):
+    """Add a unit operation or stream to the flowsheet"""
+    try:
+        if flowsheet_solver is None:
+            raise HTTPException(status_code=500, detail="Flowsheet solver not initialized")
+
+        object_type = data.get('type')
+        object_id = data.get('id')
+        object_data = data.get('data', {})
+
+        if object_type == 'unit_operation':
+            # Create unit operation
+            unit_type = object_data.get('unitType', '').lower()
+            unit_op = UnitOperationFactory.create_unit_operation(
+                unit_type,
+                object_id,
+                object_data
+            )
+            flowsheet_solver.add_unit_operation(unit_op)
+
+        elif object_type == 'stream':
+            # Create stream
+            stream_type = object_data.get('unitType', '')
+            if stream_type == 'material_stream':
+                stream = MaterialStream(object_id, object_data.get('name', object_id))
+            elif stream_type == 'energy_stream':
+                stream = EnergyStream(object_id, object_data.get('name', object_id))
+                # Set energy-specific properties
+                if 'energy_flow' in object_data:
+                    stream.energy_flow = object_data['energy_flow']
+                if 'temperature_low' in object_data:
+                    stream.temperature_low = object_data['temperature_low']
+                if 'temperature_high' in object_data:
+                    stream.temperature_high = object_data['temperature_high']
+            else:
+                raise HTTPException(status_code=400, detail=f"Unknown stream type: {stream_type}")
+
+            # Set common properties for material streams
+            if stream_type == 'material_stream':
+                # Set default properties
+                stream.temperature = object_data.get('temperature', 298.15)
+                stream.pressure = object_data.get('pressure', 101325)
+                stream.mass_flow_rate = object_data.get('mass_flow_rate', 0.0)
+                stream.composition = object_data.get('composition', {})
+                stream.property_package = property_package
+
+            flowsheet_solver.add_stream(stream)
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown object type: {object_type}")
+
+        return SimulationResult(
+            success=True,
+            message=f"{object_type} added successfully",
+            results={"object_id": object_id, "object_type": object_type}
+        )
+
+    except Exception as e:
+        print(f"Error adding object: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Failed to add object: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
-    print("Starting DWSIM Python API server...")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

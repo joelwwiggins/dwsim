@@ -7,7 +7,7 @@ DWSIMpy is the Python version of DWSIM, a comprehensive, open-source chemical pr
 - **Thermodynamic Calculations**: Peng-Robinson and Ideal property packages with flash calculations.
 - **Unit Operations**: Mixer, Heater, Valve, Pump, Splitter, and more.
 - **Flowsheet Solver**: Sequential modular solver with convergence acceleration.
-- **Web UI**: Interactive flowsheet builder using Streamlit.
+- **Web UI**: Interactive flowsheet builder using SvelteKit.
 - **Extensible**: Modular design for adding new components.
 
 ## Installation
@@ -55,10 +55,10 @@ success = solver.solve()
 
 ### Web UI
 ```bash
-streamlit run ui/app.py
+python -m dwsimpy
 ```
 
-Navigate to http://localhost:8502 to build and solve flowsheets interactively.
+Navigate to http://localhost:5173 to build and solve flowsheets interactively.
 
 ## Testing
 

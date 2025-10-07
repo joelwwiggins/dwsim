@@ -1,6 +1,4 @@
 <script lang="ts">
-	import type { ComponentProps } from 'svelte';
-
 	interface PipeData {
 		label: string;
 		unitType: string;
@@ -12,7 +10,7 @@
 		heat_transfer_coeff_outside: number;
 		insulation_thickness: number;
 		insulation_conductivity: number;
-		flow_regime: 'laminar' | 'transitional' | 'turbulent';
+		flow_regime: "laminar" | "transitional" | "turbulent";
 	}
 
 	interface Props {
@@ -32,8 +30,8 @@
 			editedUnit = { ...unit };
 		} else {
 			editedUnit = {
-				label: '',
-				unitType: 'pipe',
+				label: "",
+				unitType: "pipe",
 				length: 100.0,
 				diameter: 0.1,
 				roughness: 0.000046,
@@ -42,7 +40,7 @@
 				heat_transfer_coeff_outside: 5.0,
 				insulation_thickness: 0.0,
 				insulation_conductivity: 0.04,
-				flow_regime: 'turbulent'
+				flow_regime: "turbulent",
 			};
 		}
 	});
@@ -77,7 +75,10 @@
 					</div>
 					<div class="form-row">
 						<label for="flow-regime">Flow Regime:</label>
-						<select id="flow-regime" bind:value={editedUnit.flow_regime}>
+						<select
+							id="flow-regime"
+							bind:value={editedUnit.flow_regime}
+						>
 							<option value="laminar">Laminar</option>
 							<option value="transitional">Transitional</option>
 							<option value="turbulent">Turbulent</option>
@@ -131,7 +132,9 @@
 				<div class="form-section">
 					<h3>Heat Transfer</h3>
 					<div class="form-row">
-						<label for="ambient-temp">Ambient Temperature (K):</label>
+						<label for="ambient-temp"
+							>Ambient Temperature (K):</label
+						>
 						<input
 							id="ambient-temp"
 							type="number"
@@ -140,7 +143,9 @@
 						/>
 					</div>
 					<div class="form-row">
-						<label for="htc-outside">Outside Heat Transfer Coefficient (W/m²·K):</label>
+						<label for="htc-outside"
+							>Outside Heat Transfer Coefficient (W/m²·K):</label
+						>
 						<input
 							id="htc-outside"
 							type="number"
@@ -150,7 +155,9 @@
 						/>
 					</div>
 					<div class="form-row">
-						<label for="insulation-thickness">Insulation Thickness (m):</label>
+						<label for="insulation-thickness"
+							>Insulation Thickness (m):</label
+						>
 						<input
 							id="insulation-thickness"
 							type="number"
@@ -160,7 +167,9 @@
 						/>
 					</div>
 					<div class="form-row">
-						<label for="insulation-k">Insulation Thermal Conductivity (W/m·K):</label>
+						<label for="insulation-k"
+							>Insulation Thermal Conductivity (W/m·K):</label
+						>
 						<input
 							id="insulation-k"
 							type="number"
@@ -172,12 +181,25 @@
 				</div>
 
 				<div class="info-section">
-					<p><strong>Note:</strong> Pipe calculations include pressure drop due to friction, elevation changes, and heat loss/gain to ambient.</p>
+					<p>
+						<strong>Note:</strong> Pipe calculations include pressure
+						drop due to friction, elevation changes, and heat loss/gain
+						to ambient.
+					</p>
 					<p><strong>Flow regimes:</strong></p>
 					<ul>
-						<li><strong>Laminar:</strong> Re < 2100 (smooth, predictable flow)</li>
-						<li><strong>Transitional:</strong> 2100 < Re < 4000 (unstable flow)</li>
-						<li><strong>Turbulent:</strong> Re > 4000 (chaotic, efficient mixing)</li>
+						<li>
+							<strong>Laminar:</strong> Re {@html "&lt;"} 2100 (smooth,
+							predictable flow)
+						</li>
+						<li>
+							<strong>Transitional:</strong> 2100 {@html "&lt;"} Re
+							{@html "&lt;"} 4000 (unstable flow)
+						</li>
+						<li>
+							<strong>Turbulent:</strong> Re {@html "&gt;"} 4000 (chaotic,
+							efficient mixing)
+						</li>
 					</ul>
 				</div>
 			</div>
@@ -284,7 +306,8 @@
 		margin-right: 12px;
 	}
 
-	.form-row input, .form-row select {
+	.form-row input,
+	.form-row select {
 		padding: 8px 12px;
 		border: 1px solid #d1d5db;
 		border-radius: 4px;
@@ -293,7 +316,8 @@
 		min-width: 120px;
 	}
 
-	.form-row input:focus, .form-row select:focus {
+	.form-row input:focus,
+	.form-row select:focus {
 		outline: none;
 		border-color: #2563eb;
 		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -334,7 +358,8 @@
 		border-radius: 0 0 8px 8px;
 	}
 
-	.cancel-btn, .save-btn {
+	.cancel-btn,
+	.save-btn {
 		padding: 10px 20px;
 		border: none;
 		border-radius: 4px;

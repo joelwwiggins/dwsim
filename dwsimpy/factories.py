@@ -41,7 +41,15 @@ class UnitOperationFactory:
             "expander": "Expander unit operation",
             "heat_exchanger": "Heat exchanger unit operation",
             "pipe": "Pipe unit operation",
+            "absorption_column": "Absorption column unit operation",
+            "stripping_column": "Stripping column unit operation",
+            "condenser": "Condenser unit operation",
+            "reboiler": "Reboiler unit operation",
             "pipe": "Pipe unit operation",
+            "absorption_column": "Absorption column unit operation",
+            "stripping_column": "Stripping column unit operation",
+            "condenser": "Condenser unit operation",
+            "reboiler": "Reboiler unit operation",
             "vessel": "Vessel unit operation",
             "component_separator": "Component separator unit operation",
             "filter": "Filter unit operation",
@@ -51,7 +59,11 @@ class UnitOperationFactory:
             "conversion_reactor": "Conversion reactor unit operation",
             "equilibrium_reactor": "Equilibrium reactor unit operation",
             "heat_exchanger": "Heat exchanger unit operation",
-            "pipe": "Pipe unit operation"
+            "pipe": "Pipe unit operation",
+            "absorption_column": "Absorption column unit operation",
+            "stripping_column": "Stripping column unit operation",
+            "condenser": "Condenser unit operation",
+            "reboiler": "Reboiler unit operation"
         }
 
 
@@ -150,7 +162,8 @@ try:
     from .unit_ops.relief_valve import ReliefValve
     UnitOperationFactory.register("relief_valve", ReliefValve)
 except ImportError:
-    passtry:
+    pass
+try:
     from .unit_operations.distillation_column import DistillationColumn
     UnitOperationFactory.register("distillation_column", DistillationColumn)
 except ImportError:
@@ -173,5 +186,25 @@ except ImportError:
 try:
     from .unit_operations.pipe import Pipe
     UnitOperationFactory.register("pipe", Pipe)
+except ImportError:
+    pass
+try:
+    from .unit_operations.absorption_column import AbsorptionColumn
+    UnitOperationFactory.register("absorption_column", AbsorptionColumn)
+except ImportError:
+    pass
+try:
+    from .unit_operations.stripping_column import StrippingColumn
+    UnitOperationFactory.register("stripping_column", StrippingColumn)
+except ImportError:
+    pass
+try:
+    from .unit_operations.condenser import Condenser
+    UnitOperationFactory.register("condenser", Condenser)
+except ImportError:
+    pass
+try:
+    from .unit_operations.reboiler import Reboiler
+    UnitOperationFactory.register("reboiler", Reboiler)
 except ImportError:
     pass

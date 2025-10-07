@@ -2,7 +2,11 @@ Metadata-Version: 2.4
 Name: dwsimpy
 Version: 0.1.0
 Summary: DWSIM Python
+Requires-Dist: pytest>=7.0.0
+Requires-Dist: pytest-cov>=4.0.0
 Requires-Dist: numpy>=1.21.0
 Requires-Dist: scipy>=1.7.0
 Requires-Dist: matplotlib>=3.5.0
-Requires-Dist: streamlit>=1.0.0
+Requires-Dist: fastapi>=0.100.0
+Requires-Dist: uvicorn>=0.20.0
+Requires-Dist: pydantic>=2.0.0
